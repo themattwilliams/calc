@@ -289,6 +289,8 @@
                 <button id="run-ui-enhancement-tests" class="btn secondary">🎨 UI Enhancement Tests</button>
                 <button id="run-markdown-tests" class="btn secondary">📄 Markdown Export Tests</button>
                 <button id="run-integration-tests" class="btn secondary">🔗 Integration Tests</button>
+                <button id="run-temp-financing-tests" class="btn secondary">🏗️ Temporary Financing Tests</button>
+                <button id="run-temp-integration-tests" class="btn secondary">🔄 Temp Financing Integration</button>
                 <button id="clear-results" class="btn danger">🗑️ Clear Results</button>
                 <a href="index.html" class="btn secondary">🏠 Back to App</a>
             </div>
@@ -306,6 +308,7 @@
     
     <!-- Load actual calculator functions for testing -->
     <script src="js/calculator.js"></script>
+    <script src="js/temporary-financing.js"></script>
     
     <!-- Test Suites -->
     <script src="tests/calculation-tests.js"></script>
@@ -314,6 +317,8 @@
     <script src="tests/ui-enhancement-tests.js"></script>
     <script src="tests/markdown-export-tests.js"></script>
     <script src="tests/integration-workflow-tests.js"></script>
+    <script src="tests/temporary-financing-calculations.js"></script>
+    <script src="tests/temporary-financing-integration.js"></script>
     
     <!-- Test Runner Logic -->
     <script>
@@ -325,6 +330,8 @@
             const runUIEnhancementBtn = document.getElementById('run-ui-enhancement-tests');
             const runMarkdownBtn = document.getElementById('run-markdown-tests');
             const runIntegrationBtn = document.getElementById('run-integration-tests');
+            const runTempFinancingBtn = document.getElementById('run-temp-financing-tests');
+            const runTempIntegrationBtn = document.getElementById('run-temp-integration-tests');
             const clearResultsBtn = document.getElementById('clear-results');
             const resultsContainer = document.getElementById('test-results');
             
@@ -387,6 +394,14 @@
             
             runIntegrationBtn.addEventListener('click', () => {
                 runTestsByCategory('Integration Workflows');
+            });
+            
+            runTempFinancingBtn.addEventListener('click', () => {
+                runTestsByCategory('Temporary Financing');
+            });
+            
+            runTempIntegrationBtn.addEventListener('click', () => {
+                runTestsByCategory('Temporary Financing Integration');
             });
             
             clearResultsBtn.addEventListener('click', () => {
