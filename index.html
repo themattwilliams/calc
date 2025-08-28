@@ -282,6 +282,158 @@
                         </div>
                     </div>
 
+                    <!-- Temporary Financing (BRRRR Strategy) -->
+                    <div class="bg-gray-700 p-5 rounded-lg border border-gray-600">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-medium text-gray-200">Temporary Financing</h3>
+                            <div class="flex items-center space-x-2">
+                                <label class="text-gray-400 text-sm">Enable BRRRR/Hard Money Strategy</label>
+                                <input type="checkbox" id="useTemporaryFinancing" 
+                                       class="form-checkbox h-4 w-4 text-blue-600 bg-gray-900 border-gray-600 rounded focus:ring-blue-500">
+                            </div>
+                        </div>
+                        
+                        <div id="temporaryFinancingFields" class="space-y-4 hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Initial Investment -->
+                                <div>
+                                    <label for="initialCashInvestment" class="block text-gray-400">Initial Cash Investment</label>
+                                    <input type="number" id="initialCashInvestment" value="0" min="0" max="10000000"
+                                           class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <div class="text-xs text-gray-500 mt-1">Your own cash for purchase</div>
+                                    <div class="error-message" id="initialCashInvestment-error"></div>
+                                </div>
+                                
+                                <!-- Renovation Costs -->
+                                <div>
+                                    <label for="renovationCosts" class="block text-gray-400">Renovation Costs</label>
+                                    <input type="number" id="renovationCosts" value="0" min="0" max="1000000"
+                                           class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <div class="text-xs text-gray-500 mt-1">Cost to renovate property</div>
+                                    <div class="error-message" id="renovationCosts-error"></div>
+                                </div>
+                                
+                                <!-- Temporary Financing Amount -->
+                                <div>
+                                    <label for="tempFinancingAmount" class="block text-gray-400">Temporary Financing Amount</label>
+                                    <input type="number" id="tempFinancingAmount" value="0" min="0" max="10000000"
+                                           class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <div class="text-xs text-gray-500 mt-1">Hard money or bridge loan amount</div>
+                                    <div class="error-message" id="tempFinancingAmount-error"></div>
+                                </div>
+                                
+                                <!-- Temporary Interest Rate -->
+                                <div>
+                                    <label for="tempInterestRate" class="block text-gray-400">Temporary Interest Rate (%)</label>
+                                    <div class="flex items-center space-x-2">
+                                        <input type="number" id="tempInterestRate" value="12" min="0" max="30" step="0.25"
+                                               class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                        <div class="flex space-x-1">
+                                            <button class="btn-quick-entry" data-target="tempInterestRate" data-type="fixed" data-value="0">0%</button>
+                                            <button class="btn-quick-entry" data-target="tempInterestRate" data-type="fixed" data-value="10">10%</button>
+                                            <button class="btn-quick-entry" data-target="tempInterestRate" data-type="fixed" data-value="12">12%</button>
+                                            <button class="btn-quick-entry" data-target="tempInterestRate" data-type="fixed" data-value="15">15%</button>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">0% if using own cash, 10-15% for hard money</div>
+                                    <div class="error-message" id="tempInterestRate-error"></div>
+                                </div>
+                                
+                                <!-- Origination Points -->
+                                <div>
+                                    <label for="originationPoints" class="block text-gray-400">Origination Points (%)</label>
+                                    <div class="flex items-center space-x-2">
+                                        <input type="number" id="originationPoints" value="2" min="0" max="10" step="0.25"
+                                               class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                        <div class="flex space-x-1">
+                                            <button class="btn-quick-entry" data-target="originationPoints" data-type="fixed" data-value="0">0%</button>
+                                            <button class="btn-quick-entry" data-target="originationPoints" data-type="fixed" data-value="1">1%</button>
+                                            <button class="btn-quick-entry" data-target="originationPoints" data-type="fixed" data-value="2">2%</button>
+                                            <button class="btn-quick-entry" data-target="originationPoints" data-type="fixed" data-value="3">3%</button>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">Upfront fees as % of loan amount</div>
+                                    <div class="error-message" id="originationPoints-error"></div>
+                                </div>
+                                
+                                <!-- Temporary Loan Term -->
+                                <div>
+                                    <label for="tempLoanTermMonths" class="block text-gray-400">Temporary Loan Term (Months)</label>
+                                    <div class="flex items-center space-x-2">
+                                        <input type="number" id="tempLoanTermMonths" value="6" min="1" max="24"
+                                               class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                        <div class="flex space-x-1">
+                                            <button class="btn-quick-entry" data-target="tempLoanTermMonths" data-type="fixed" data-value="3">3mo</button>
+                                            <button class="btn-quick-entry" data-target="tempLoanTermMonths" data-type="fixed" data-value="6">6mo</button>
+                                            <button class="btn-quick-entry" data-target="tempLoanTermMonths" data-type="fixed" data-value="12">12mo</button>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">Time until cash-out refinance</div>
+                                    <div class="error-message" id="tempLoanTermMonths-error"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-600">
+                                <!-- After Repair Value -->
+                                <div>
+                                    <label for="afterRepairValue" class="block text-gray-400">After Repair Value (ARV)</label>
+                                    <input type="number" id="afterRepairValue" value="0" min="0" max="50000000"
+                                           class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <div class="text-xs text-gray-500 mt-1">Expected property value after renovation</div>
+                                    <div class="error-message" id="afterRepairValue-error"></div>
+                                </div>
+                                
+                                <!-- Cash-Out Refinance LTV -->
+                                <div>
+                                    <label for="cashOutLTV" class="block text-gray-400">Cash-Out Refinance LTV (%)</label>
+                                    <div class="flex items-center space-x-2">
+                                        <input type="number" id="cashOutLTV" value="75" min="50" max="85" step="5"
+                                               class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                        <div class="flex space-x-1">
+                                            <button class="btn-quick-entry" data-target="cashOutLTV" data-type="fixed" data-value="65">65%</button>
+                                            <button class="btn-quick-entry" data-target="cashOutLTV" data-type="fixed" data-value="70">70%</button>
+                                            <button class="btn-quick-entry" data-target="cashOutLTV" data-type="fixed" data-value="75">75%</button>
+                                            <button class="btn-quick-entry" data-target="cashOutLTV" data-type="fixed" data-value="80">80%</button>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">Loan-to-value for cash-out refinance</div>
+                                    <div class="error-message" id="cashOutLTV-error"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Calculated Summary Section -->
+                            <div class="bg-gray-800 p-4 rounded-lg border border-gray-600 mt-4">
+                                <h4 class="text-md font-medium text-gray-200 mb-3">Temporary Financing Summary</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-gray-400">Total Initial Investment:</span>
+                                        <div class="text-white font-medium" id="totalInitialInvestment">$0.00</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400">Temporary Financing Costs:</span>
+                                        <div class="text-white font-medium" id="tempFinancingCosts">$0.00</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400">Cash Returned at Refinance:</span>
+                                        <div class="text-white font-medium" id="cashReturnedAtRefinance">$0.00</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400">Final Cash Left in Deal:</span>
+                                        <div class="text-white font-medium" id="finalCashLeftInDeal">$0.00</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400">New Loan Amount:</span>
+                                        <div class="text-white font-medium" id="newLoanAmount">$0.00</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400">Analysis Start Date:</span>
+                                        <div class="text-white font-medium" id="analysisStartDate">Immediate</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Income -->
                     <div class="bg-gray-700 p-5 rounded-lg border border-gray-600">
                         <h3 class="text-lg font-medium text-gray-200 mb-4">Income</h3>
@@ -506,6 +658,7 @@
 
     <!-- Load Calculator Functions -->
     <script src="js/calculator.js"></script>
+    <script src="js/temporary-financing.js"></script>
     
     <!-- Load UI Controller -->
     <script src="js/ui-controller.js"></script>

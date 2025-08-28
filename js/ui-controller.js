@@ -21,6 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const markdownFileInput = document.getElementById('markdownFileInput');
     const quickEntryButtons = document.querySelectorAll('.btn-quick-entry');
     
+    // Temporary financing elements
+    const useTemporaryFinancingCheckbox = document.getElementById('useTemporaryFinancing');
+    const temporaryFinancingFields = document.getElementById('temporaryFinancingFields');
+    
     // Result display elements
     const results = {
         totalCostOfProject: document.getElementById('totalCostOfProject'),
@@ -1039,6 +1043,96 @@ ${projectionData.filter(d => d.year === 1 || d.year === 5 || d.year === 10 || d.
         // Clear the file input for next use
         event.target.value = '';
     }
+
+    /**
+     * Updates temporary financing calculations and displays
+     */
+    function updateTemporaryFinancingCalculations() {
+        if (!useTemporaryFinancingCheckbox.checked) {
+            return;
+        }
+
+        const inputs = collectTemporaryFinancingInputs();
+        const analysis = calculateTemporaryFinancingAnalysis(inputs);
+        const validation = validateTemporaryFinancingInputs(inputs);
+
+        // Update summary display
+        updateTemporaryFinancingSummary(analysis);
+
+        // Show validation warnings/errors
+        displayTemporaryFinancingValidation(validation);
+
+        // Update main calculations if temporary financing is enabled
+        updateCalculations();
+    }
+
+    /**
+     * Collects temporary financing input values
+     */
+    function collectTemporaryFinancingInputs() {
+        return {
+            initialCashInvestment: parseFloat(document.getElementById('initialCashInvestment')?.value) || 0,
+            renovationCosts: parseFloat(document.getElementById('renovationCosts')?.value) || 0,
+            tempFinancingAmount: parseFloat(document.getElementById('tempFinancingAmount')?.value) || 0,
+            tempInterestRate: parseFloat(document.getElementById('tempInterestRate')?.value) || 0,
+            originationPoints: parseFloat(document.getElementById('originationPoints')?.value) || 0,
+            tempLoanTermMonths: parseInt(document.getElementById('tempLoanTermMonths')?.value) || 6,
+            afterRepairValue: parseFloat(document.getElementById('afterRepairValue')?.value) || 0,
+            cashOutLTV: parseFloat(document.getElementById('cashOutLTV')?.value) || 75,
+            purchasePrice: parseFloat(document.getElementById('purchasePrice')?.value) || 0
+        };
+    }
+
+    /**
+     * Updates the temporary financing summary display
+     */
+    function updateTemporaryFinancingSummary(analysis) {
+        const elements = {
+            totalInitialInvestment: document.getElementById('totalInitialInvestment'),
+            tempFinancingCosts: document.getElementById('tempFinancingCosts'),
+            cashReturnedAtRefinance: document.getElementById('cashReturnedAtRefinance'),
+            finalCashLeftInDeal: document.getElementById('finalCashLeftInDeal'),
+            newLoanAmount: document.getElementById('newLoanAmount'),
+            analysisStartDate: document.getElementById('analysisStartDate')
+        };
+
+        if (elements.totalInitialInvestment) {
+            elements.totalInitialInvestment.textContent = formatCurrency(analysis.totalInitialInvestment);
+        }
+        if (elements.tempFinancingCosts) {
+            elements.tempFinancingCosts.textContent = formatCurrency(analysis.tempFinancingCosts.totalCost);
+        }
+        if (elements.cashReturnedAtRefinance) {
+            elements.cashReturnedAtRefinance.textContent = formatCurrency(analysis.refinanceResults.cashReturned);
+        }
+        if (elements.finalCashLeftInDeal) {
+            elements.finalCashLeftInDeal.textContent = formatCurrency(analysis.finalCashLeftInDeal);
+        }
+        if (elements.newLoanAmount) {
+            elements.newLoanAmount.textContent = formatCurrency(analysis.refinanceResults.newLoanAmount);
+        }
+        if (elements.analysisStartDate) {
+            const dateStr = analysis.analysisStartDate.toLocaleDateString();
+            elements.analysisStartDate.textContent = dateStr;
+        }
+    }
+
+    /**
+     * Displays temporary financing validation messages
+     */
+    function displayTemporaryFinancingValidation(validation) {
+        // Clear existing validation messages
+        const errorContainers = document.querySelectorAll('#temporaryFinancingFields .error-message');
+        errorContainers.forEach(container => {
+            container.textContent = '';
+        });
+
+        // Display errors and warnings
+        if (validation.errors.length > 0 || validation.warnings.length > 0) {
+            console.log('Temporary Financing Validation:', validation);
+            // For now, just log. Later we can add UI elements to display these
+        }
+    }
     
     // ========================================
     // EVENT LISTENERS
@@ -1082,6 +1176,16 @@ ${projectionData.filter(d => d.year === 1 || d.year === 5 || d.year === 10 || d.
         input.addEventListener('input', debouncedCalculationUpdate);
     });
     
+    // Temporary financing input listeners
+    const tempFinancingInputs = document.querySelectorAll('#temporaryFinancingFields input[type="number"]');
+    tempFinancingInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            if (useTemporaryFinancingCheckbox.checked) {
+                updateTemporaryFinancingCalculations();
+            }
+        });
+    });
+    
     // Save button listeners
     if (saveTopBtn) {
         saveTopBtn.addEventListener('click', saveAsMarkdown);
@@ -1105,6 +1209,20 @@ ${projectionData.filter(d => d.year === 1 || d.year === 5 || d.year === 10 || d.
     // File input listener for markdown import
     if (markdownFileInput) {
         markdownFileInput.addEventListener('change', handleMarkdownFileSelection);
+    }
+    
+    // Temporary financing checkbox listener
+    if (useTemporaryFinancingCheckbox) {
+        useTemporaryFinancingCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                temporaryFinancingFields.classList.remove('hidden');
+                updateTemporaryFinancingCalculations();
+            } else {
+                temporaryFinancingFields.classList.add('hidden');
+                // Reset temporary financing in calculations
+                updateCalculations();
+            }
+        });
     }
     
     // Quick entry button listeners
