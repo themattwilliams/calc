@@ -18,12 +18,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveBottomBtn = document.getElementById('saveBottomBtn');
     const loadBtn = document.getElementById('loadBtn');
     const loadBottomBtn = document.getElementById('loadBottomBtn');
+    const printBtn = document.getElementById('printBtn');
     const markdownFileInput = document.getElementById('markdownFileInput');
     const quickEntryButtons = document.querySelectorAll('.btn-quick-entry');
     
     // Temporary financing elements
     const useTemporaryFinancingCheckbox = document.getElementById('useTemporaryFinancing');
     const temporaryFinancingFields = document.getElementById('temporaryFinancingFields');
+    
+    // Property tax dual input elements
+    const taxInputToggle = document.getElementById('taxInputToggle');
+    const monthlyTaxInput = document.getElementById('monthlyTaxInput');
+    const rateTaxInput = document.getElementById('rateTaxInput');
+    const monthlyPropertyTaxes = document.getElementById('monthlyPropertyTaxes');
+    const annualTaxRate = document.getElementById('annualTaxRate');
+    const propertyTaxCalculation = document.getElementById('propertyTaxCalculation');
     
     // Result display elements
     const results = {
@@ -1135,7 +1144,312 @@ ${projectionData.filter(d => d.year === 1 || d.year === 5 || d.year === 10 || d.
     }
     
     // ========================================
+    // ========================================
+    // PROPERTY TAX DUAL INPUT SYSTEM
+    // ========================================
+    
+    /**
+     * Calculate monthly tax amount from annual tax rate
+     * @param {number} propertyValue - Property purchase price
+     * @param {number} annualTaxRate - Annual tax rate as percentage (e.g., 1.25 for 1.25%)
+     * @returns {number} Monthly tax amount
+     */
+    function calculateMonthlyFromRate(propertyValue, annualTaxRate) {
+        if (!propertyValue || !annualTaxRate || propertyValue <= 0) return 0;
+        const annualTax = propertyValue * (annualTaxRate / 100);
+        return annualTax / 12;
+    }
+    
+    /**
+     * Calculate annual tax rate from monthly tax amount
+     * @param {number} propertyValue - Property purchase price
+     * @param {number} monthlyTaxAmount - Monthly tax amount in dollars
+     * @returns {number} Annual tax rate as percentage
+     */
+    function calculateRateFromMonthly(propertyValue, monthlyTaxAmount) {
+        if (!propertyValue || !monthlyTaxAmount || propertyValue <= 0) return 0;
+        const annualTax = monthlyTaxAmount * 12;
+        return (annualTax / propertyValue) * 100;
+    }
+    
+    /**
+     * Handles the tax input toggle between monthly amount and annual rate
+     */
+    function handleTaxInputToggle() {
+        const currentMode = taxInputToggle.getAttribute('data-mode');
+        const purchasePrice = parseFloat(document.getElementById('purchasePrice').value) || 0;
+        
+        if (currentMode === 'monthly') {
+            // Switch to rate mode
+            taxInputToggle.setAttribute('data-mode', 'rate');
+            taxInputToggle.textContent = 'Annual %';
+            
+            // Hide monthly input, show rate input
+            monthlyTaxInput.classList.add('hidden');
+            rateTaxInput.classList.remove('hidden');
+            
+            // Calculate rate from current monthly amount
+            const currentMonthly = parseFloat(monthlyPropertyTaxes.value) || 0;
+            if (purchasePrice > 0 && currentMonthly > 0) {
+                const calculatedRate = calculateRateFromMonthly(purchasePrice, currentMonthly);
+                annualTaxRate.value = calculatedRate.toFixed(2);
+            }
+        } else {
+            // Switch to monthly mode
+            taxInputToggle.setAttribute('data-mode', 'monthly');
+            taxInputToggle.textContent = 'Monthly $';
+            
+            // Hide rate input, show monthly input
+            rateTaxInput.classList.add('hidden');
+            monthlyTaxInput.classList.remove('hidden');
+            
+            // Calculate monthly from current rate
+            const currentRate = parseFloat(annualTaxRate.value) || 0;
+            if (purchasePrice > 0 && currentRate > 0) {
+                const calculatedMonthly = calculateMonthlyFromRate(purchasePrice, currentRate);
+                monthlyPropertyTaxes.value = Math.round(calculatedMonthly);
+            }
+        }
+        
+        // Update calculations and display
+        updatePropertyTaxCalculation();
+        debouncedCalculationUpdate();
+    }
+    
+    /**
+     * Updates the property tax calculation display
+     */
+    function updatePropertyTaxCalculation() {
+        const purchasePrice = parseFloat(document.getElementById('purchasePrice').value) || 0;
+        const currentMode = taxInputToggle.getAttribute('data-mode');
+        
+        if (purchasePrice <= 0) {
+            propertyTaxCalculation.textContent = 'Enter property purchase price to see tax calculations';
+            return;
+        }
+        
+        let displayText = '';
+        
+        if (currentMode === 'monthly') {
+            // Show calculated annual rate
+            const monthlyAmount = parseFloat(monthlyPropertyTaxes.value) || 0;
+            if (monthlyAmount > 0) {
+                const annualAmount = monthlyAmount * 12;
+                const taxRate = calculateRateFromMonthly(purchasePrice, monthlyAmount);
+                displayText = `Annual: ${formatCurrency(annualAmount)} | Tax Rate: ${taxRate.toFixed(2)}%`;
+            } else {
+                displayText = 'Enter monthly tax amount';
+            }
+        } else {
+            // Show calculated monthly amount
+            const taxRate = parseFloat(annualTaxRate.value) || 0;
+            if (taxRate > 0) {
+                const monthlyAmount = calculateMonthlyFromRate(purchasePrice, taxRate);
+                const annualAmount = monthlyAmount * 12;
+                displayText = `Monthly: ${formatCurrency(monthlyAmount)} | Annual: ${formatCurrency(annualAmount)}`;
+            } else {
+                displayText = 'Enter annual tax rate';
+            }
+        }
+        
+        propertyTaxCalculation.textContent = displayText;
+    }
+    
+    /**
+     * Handles changes to the monthly property tax input
+     */
+    function handleMonthlyTaxChange() {
+        const currentMode = taxInputToggle.getAttribute('data-mode');
+        if (currentMode === 'monthly') {
+            updatePropertyTaxCalculation();
+            debouncedCalculationUpdate();
+        }
+    }
+    
+    /**
+     * Handles changes to the annual tax rate input
+     */
+    function handleAnnualTaxRateChange() {
+        const currentMode = taxInputToggle.getAttribute('data-mode');
+        if (currentMode === 'rate') {
+            // Update the monthly tax field to keep it in sync
+            const purchasePrice = parseFloat(document.getElementById('purchasePrice').value) || 0;
+            const taxRate = parseFloat(annualTaxRate.value) || 0;
+            
+            if (purchasePrice > 0 && taxRate > 0) {
+                const calculatedMonthly = calculateMonthlyFromRate(purchasePrice, taxRate);
+                monthlyPropertyTaxes.value = Math.round(calculatedMonthly);
+            }
+            
+            updatePropertyTaxCalculation();
+            debouncedCalculationUpdate();
+        }
+    }
+    
+    /**
+     * Handles changes to purchase price that affect tax calculations
+     */
+    function handlePurchasePriceChangeForTax() {
+        // Update tax calculation display when purchase price changes
+        updatePropertyTaxCalculation();
+    }
+    
+    // ========================================
+    // PRINT FUNCTIONALITY
+    // ========================================
+    
+    /**
+     * Prepares the page for printing by optimizing layout and content
+     */
+    function prepareForPrint() {
+        try {
+            // Set print date
+            const printDateElement = document.getElementById('printReportDate');
+            if (printDateElement) {
+                printDateElement.textContent = `Generated on: ${new Date().toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}`;
+            }
+            
+            // Optimize charts for print
+            optimizeChartsForPrint();
+            
+            // Add print-specific classes
+            document.body.classList.add('print-mode');
+            
+            // Hide interactive elements
+            const elementsToHide = document.querySelectorAll('.btn-quick-entry, .error-message');
+            elementsToHide.forEach(el => el.classList.add('no-print'));
+            
+            // Show print-specific elements
+            const printElements = document.querySelectorAll('.print-header, .print-footer');
+            printElements.forEach(el => el.style.display = 'block');
+            
+            return true;
+        } catch (error) {
+            console.error('Error preparing for print:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Reverts print optimizations after printing
+     */
+    function revertPrintOptimizations() {
+        try {
+            // Remove print-specific classes
+            document.body.classList.remove('print-mode');
+            
+            // Show interactive elements
+            const hiddenElements = document.querySelectorAll('.no-print');
+            hiddenElements.forEach(el => el.classList.remove('no-print'));
+            
+            // Hide print-specific elements
+            const printElements = document.querySelectorAll('.print-header, .print-footer');
+            printElements.forEach(el => el.style.display = 'none');
+            
+            // Restore chart sizes
+            restoreChartsFromPrint();
+            
+            return true;
+        } catch (error) {
+            console.error('Error reverting print optimizations:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Optimizes charts for print layout
+     */
+    function optimizeChartsForPrint() {
+        const chartCanvases = ['incomeExpensesChart', 'equityValueChart', 'amortizationChart'];
+        
+        chartCanvases.forEach(chartId => {
+            const canvas = document.getElementById(chartId);
+            if (canvas) {
+                // Store original dimensions
+                canvas.setAttribute('data-original-width', canvas.style.width);
+                canvas.setAttribute('data-original-height', canvas.style.height);
+                
+                // Set print-friendly dimensions
+                canvas.style.width = '100%';
+                canvas.style.maxWidth = '600px';
+                canvas.style.height = '300px';
+                
+                // Add print-specific styling
+                canvas.parentElement.style.pageBreakInside = 'avoid';
+                canvas.parentElement.style.marginBottom = '20px';
+            }
+        });
+    }
+    
+    /**
+     * Restores original chart dimensions after printing
+     */
+    function restoreChartsFromPrint() {
+        const chartCanvases = ['incomeExpensesChart', 'equityValueChart', 'amortizationChart'];
+        
+        chartCanvases.forEach(chartId => {
+            const canvas = document.getElementById(chartId);
+            if (canvas) {
+                // Restore original dimensions
+                const originalWidth = canvas.getAttribute('data-original-width');
+                const originalHeight = canvas.getAttribute('data-original-height');
+                
+                if (originalWidth) canvas.style.width = originalWidth;
+                if (originalHeight) canvas.style.height = originalHeight;
+                
+                // Remove data attributes
+                canvas.removeAttribute('data-original-width');
+                canvas.removeAttribute('data-original-height');
+                
+                // Remove print-specific styling
+                canvas.parentElement.style.pageBreakInside = '';
+                canvas.parentElement.style.marginBottom = '';
+            }
+        });
+    }
+    
+    /**
+     * Handles the print button click
+     */
+    function handlePrintReport() {
+        try {
+            // Prepare page for printing
+            const prepared = prepareForPrint();
+            if (!prepared) {
+                throw new Error('Failed to prepare page for printing');
+            }
+            
+            // Small delay to ensure DOM updates are complete
+            setTimeout(() => {
+                // Trigger browser print dialog
+                window.print();
+                
+                // Revert optimizations after print dialog closes
+                // Note: There's no reliable way to detect when print dialog closes,
+                // so we'll revert after a reasonable delay
+                setTimeout(() => {
+                    revertPrintOptimizations();
+                }, 1000);
+            }, 100);
+            
+        } catch (error) {
+            console.error('Print error:', error);
+            alert('An error occurred while preparing the report for printing. Please try again.');
+            
+            // Ensure we revert optimizations even if there's an error
+            revertPrintOptimizations();
+        }
+    }
+    
+    // ========================================
     // EVENT LISTENERS
+    // ========================================
     // ========================================
     
     // Debounced calculation update
@@ -1204,6 +1518,27 @@ ${projectionData.filter(d => d.year === 1 || d.year === 5 || d.year === 10 || d.
         loadBottomBtn.addEventListener('click', function() {
             markdownFileInput.click();
         });
+    }
+    
+    // Print button listener
+    if (printBtn) {
+        printBtn.addEventListener('click', handlePrintReport);
+    }
+    
+    // Property tax dual input listeners
+    if (taxInputToggle) {
+        taxInputToggle.addEventListener('click', handleTaxInputToggle);
+    }
+    if (monthlyPropertyTaxes) {
+        monthlyPropertyTaxes.addEventListener('input', handleMonthlyTaxChange);
+    }
+    if (annualTaxRate) {
+        annualTaxRate.addEventListener('input', handleAnnualTaxRateChange);
+    }
+    // Add listener to purchase price for tax calculations
+    const purchasePriceInput = document.getElementById('purchasePrice');
+    if (purchasePriceInput) {
+        purchasePriceInput.addEventListener('input', handlePurchasePriceChangeForTax);
     }
     
     // File input listener for markdown import
@@ -1288,6 +1623,11 @@ ${projectionData.filter(d => d.year === 1 || d.year === 5 || d.year === 10 || d.
     // Initial calculation on page load
     setTimeout(() => {
         updateCalculations();
+        
+        // Initialize property tax calculation display
+        if (propertyTaxCalculation) {
+            updatePropertyTaxCalculation();
+        }
     }, 100);
     
     // Performance monitoring (development only)

@@ -291,6 +291,10 @@
                 <button id="run-integration-tests" class="btn secondary">🔗 Integration Tests</button>
                 <button id="run-temp-financing-tests" class="btn secondary">🏗️ Temporary Financing Tests</button>
                 <button id="run-temp-integration-tests" class="btn secondary">🔄 Temp Financing Integration</button>
+                <button id="run-tax-dual-input-tests" class="btn secondary">🏠 Property Tax Dual Input</button>
+                <button id="run-button-hover-tests" class="btn secondary">👆 Button Hover Enhancement</button>
+                <button id="run-print-tests" class="btn secondary">🖨️ Print Functionality</button>
+                <button id="run-fuzz-tests" class="btn secondary">🎲 Random/Fuzz Testing</button>
                 <button id="clear-results" class="btn danger">🗑️ Clear Results</button>
                 <a href="index.html" class="btn secondary">🏠 Back to App</a>
             </div>
@@ -319,6 +323,10 @@
     <script src="tests/integration-workflow-tests.js"></script>
     <script src="tests/temporary-financing-calculations.js"></script>
     <script src="tests/temporary-financing-integration.js"></script>
+    <script src="tests/property-tax-dual-input-tests.js"></script>
+    <script src="tests/button-hover-enhancement-tests.js"></script>
+    <script src="tests/print-functionality-tests.js"></script>
+    <script src="tests/random-fuzz-testing.js"></script>
     
     <!-- Test Runner Logic -->
     <script>
@@ -332,6 +340,10 @@
             const runIntegrationBtn = document.getElementById('run-integration-tests');
             const runTempFinancingBtn = document.getElementById('run-temp-financing-tests');
             const runTempIntegrationBtn = document.getElementById('run-temp-integration-tests');
+            const runTaxDualInputBtn = document.getElementById('run-tax-dual-input-tests');
+            const runButtonHoverBtn = document.getElementById('run-button-hover-tests');
+            const runPrintBtn = document.getElementById('run-print-tests');
+            const runFuzzBtn = document.getElementById('run-fuzz-tests');
             const clearResultsBtn = document.getElementById('clear-results');
             const resultsContainer = document.getElementById('test-results');
             
@@ -402,6 +414,22 @@
             
             runTempIntegrationBtn.addEventListener('click', () => {
                 runTestsByCategory('Temporary Financing Integration');
+            });
+            
+            runTaxDualInputBtn.addEventListener('click', () => {
+                runTestsByCategory('Property Tax Dual Input System');
+            });
+            
+            runButtonHoverBtn.addEventListener('click', () => {
+                runTestsByCategory('Button Hover Enhancement');
+            });
+            
+            runPrintBtn.addEventListener('click', () => {
+                runTestsByCategory('Print Functionality');
+            });
+            
+            runFuzzBtn.addEventListener('click', () => {
+                runTestsByCategory('Random Fuzz Testing');
             });
             
             clearResultsBtn.addEventListener('click', () => {

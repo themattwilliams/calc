@@ -81,10 +81,109 @@
         
         /* Quick entry buttons */
         .btn-quick-entry {
-            @apply px-3 py-1 text-sm bg-gray-600 hover:bg-gray-500 rounded-md transition-colors duration-200 ease-in-out;
+            @apply px-3 py-1 text-sm bg-gray-600 text-gray-200 rounded-md transition-all duration-200 ease-in-out cursor-pointer border border-gray-500;
+            /* Enhanced hover effects */
+        }
+        .btn-quick-entry:hover {
+            @apply bg-blue-600 text-white border-blue-400 transform scale-105 shadow-md;
+        }
+        .btn-quick-entry:active {
+            @apply bg-blue-700 transform scale-95 shadow-inner;
+        }
+        .btn-quick-entry:focus {
+            @apply outline-none ring-2 ring-blue-500 ring-opacity-50;
         }
         .text-calculation {
             @apply text-sm text-gray-400 mt-1;
+        }
+        
+        /* Print-specific styles */
+        @media print {
+            /* Hide non-essential elements during print */
+            .no-print, .btn-quick-entry, button, .error-message {
+                display: none !important;
+            }
+            
+            /* Optimize layout for print */
+            body {
+                font-size: 12pt;
+                line-height: 1.4;
+                color: #000;
+                background: white;
+            }
+            
+            /* Container adjustments */
+            .container, .max-w-7xl {
+                max-width: none;
+                margin: 0;
+                padding: 0.5in;
+            }
+            
+            /* Chart containers */
+            .chart-container {
+                page-break-inside: avoid;
+                margin-bottom: 20px;
+                border: 1px solid #ccc;
+                padding: 10px;
+            }
+            
+            /* Financial analysis section */
+            .bg-gray-800, .bg-gray-700 {
+                background: white !important;
+                color: black !important;
+                border: 1px solid #ccc !important;
+                box-shadow: none !important;
+                page-break-inside: avoid;
+            }
+            
+            /* Text colors for print */
+            .text-gray-200, .text-gray-400, .text-white {
+                color: #333 !important;
+            }
+            
+            /* Headers */
+            h1, h2, h3, h4 {
+                color: #000 !important;
+                page-break-after: avoid;
+            }
+            
+            /* Charts */
+            canvas {
+                max-width: 100% !important;
+                height: auto !important;
+                page-break-inside: avoid;
+            }
+            
+            /* Page breaks */
+            .page-break-before {
+                page-break-before: always;
+            }
+            
+            .page-break-after {
+                page-break-after: always;
+            }
+            
+            /* Print header */
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #000;
+                padding-bottom: 10px;
+            }
+            
+            /* Print footer */
+            .print-footer {
+                display: block !important;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                text-align: center;
+                font-size: 10pt;
+                border-top: 1px solid #ccc;
+                padding-top: 5px;
+            }
         }
         
         /* BiggerPockets branding */
@@ -169,13 +268,16 @@
             <p class="text-gray-400 text-lg">Professional real estate investment analysis tool</p>
         </div>
 
-        <!-- Save/Load buttons at the top -->
+        <!-- Save/Load/Print buttons at the top -->
         <div class="flex justify-end gap-3 mb-6">
             <button id="loadBtn" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200 flex items-center gap-2">
                 <span>📂</span> Load from Markdown
             </button>
             <button id="saveTopBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200 flex items-center gap-2">
                 <span>💾</span> Save as Markdown
+            </button>
+            <button id="printBtn" class="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200 flex items-center gap-2">
+                <span>🖨️</span> Print Report
             </button>
         </div>
 
@@ -452,11 +554,48 @@
                         <h3 class="text-lg font-medium text-gray-200 mb-4">Expenses</h3>
                         <div class="space-y-4">
                             <div>
-                                <label for="monthlyPropertyTaxes" class="block text-gray-400">Property Taxes (Monthly)</label>
-                                <input type="number" id="monthlyPropertyTaxes" value="484" min="0" max="100000"
-                                       class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                                <div class="text-calculation" id="annualizedTaxRate"></div>
-                                <div class="error-message" id="monthlyPropertyTaxes-error"></div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="block text-gray-400">Property Taxes</label>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs text-gray-500">Input Method:</span>
+                                        <button id="taxInputToggle" 
+                                                class="bg-gray-600 hover:bg-gray-500 text-white text-xs px-3 py-1 rounded-md transition-colors duration-200"
+                                                data-mode="monthly">
+                                            Monthly $
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Monthly Dollar Amount Input (Default) -->
+                                <div id="monthlyTaxInput" class="tax-input-container">
+                                    <label for="monthlyPropertyTaxes" class="block text-xs text-gray-500 mb-1">Monthly Amount ($)</label>
+                                    <input type="number" id="monthlyPropertyTaxes" value="484" min="0" max="100000" step="1"
+                                           class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <div class="flex space-x-1 mt-1">
+                                        <button class="btn-quick-entry" data-target="monthlyPropertyTaxes" data-type="fixed" data-value="200">$200</button>
+                                        <button class="btn-quick-entry" data-target="monthlyPropertyTaxes" data-type="fixed" data-value="400">$400</button>
+                                        <button class="btn-quick-entry" data-target="monthlyPropertyTaxes" data-type="fixed" data-value="600">$600</button>
+                                        <button class="btn-quick-entry" data-target="monthlyPropertyTaxes" data-type="fixed" data-value="800">$800</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Annual Percentage Rate Input (Hidden by Default) -->
+                                <div id="rateTaxInput" class="tax-input-container hidden">
+                                    <label for="annualTaxRate" class="block text-xs text-gray-500 mb-1">Annual Tax Rate (%)</label>
+                                    <input type="number" id="annualTaxRate" value="1.25" min="0" max="10" step="0.01"
+                                           class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <div class="flex space-x-1 mt-1">
+                                        <button class="btn-quick-entry" data-target="annualTaxRate" data-type="fixed" data-value="0.75">0.75%</button>
+                                        <button class="btn-quick-entry" data-target="annualTaxRate" data-type="fixed" data-value="1.0">1.0%</button>
+                                        <button class="btn-quick-entry" data-target="annualTaxRate" data-type="fixed" data-value="1.25">1.25%</button>
+                                        <button class="btn-quick-entry" data-target="annualTaxRate" data-type="fixed" data-value="1.5">1.5%</button>
+                                        <button class="btn-quick-entry" data-target="annualTaxRate" data-type="fixed" data-value="2.0">2.0%</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Calculated Display -->
+                                <div class="text-calculation mt-2" id="propertyTaxCalculation"></div>
+                                <div class="error-message" id="propertyTax-error"></div>
                             </div>
                             <div>
                                 <label for="monthlyInsurance" class="block text-gray-400">Insurance (Monthly)</label>
@@ -630,6 +769,16 @@
         
         <!-- Hidden file input for loading markdown files -->
         <input type="file" id="markdownFileInput" accept=".md,.txt" style="display: none;">
+        
+        <!-- Print-specific elements (hidden on screen) -->
+        <div class="print-header" style="display: none;">
+            <h1>Rental Property Analysis Report</h1>
+            <div id="printReportDate"></div>
+        </div>
+        
+        <div class="print-footer" style="display: none;">
+            <p>Generated by Rental Property Analysis Calculator | Page <span class="page-number"></span></p>
+        </div>
         
         <!-- Save/Load buttons at the bottom -->
         <div class="flex justify-end gap-3 mt-6">

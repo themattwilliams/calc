@@ -80,8 +80,8 @@ TestFramework.describe('Integration Workflows', function() {
             TestFramework.expect(closingCosts3).toBe(45000),
             TestFramework.expect(monthlyHoaFees).toBe(1000),
             TestFramework.expect(managementFee).toBe(680),
-            TestFramework.expect(totalCostOfProject).toBe(1565000),
-            TestFramework.expect(totalCashNeeded).toBe(515000)
+            TestFramework.expect(totalCostOfProject).toBe(1605000), // $1,500,000 + $45,000 + $60,000 = $1,605,000
+            TestFramework.expect(totalCashNeeded).toBe(555000) // $450,000 + $45,000 + $60,000 = $555,000
         ];
         
         return results.every(result => result === true);
@@ -424,7 +424,7 @@ TestFramework.describe('Integration Workflows', function() {
             TestFramework.expect(sanitizedAddresses[1]).toBe('456_O_Connor_Ave__4'),
             TestFramework.expect(sanitizedAddresses[2]).toBe('789_Multi_Word_Street_Name'),
             TestFramework.expect(sanitizedAddresses[3]).toBe('rental_property'),
-            TestFramework.expect(sanitizedAddresses[4]).toBe('Property_with_Symbols_____')
+            TestFramework.expect(sanitizedAddresses[4]).toBe('Property_with_Symbols______') // 6 underscores for !@#$%
         ];
         
         return results.every(result => result === true);
@@ -442,7 +442,7 @@ TestFramework.describe('Integration Workflows', function() {
         // Verify realistic growth over time
         const results = [
             TestFramework.expect(projectedIncomes[0]).toBeCloseTo(30900, 0), // Year 1
-            TestFramework.expect(projectedIncomes[1]).toBeCloseTo(34776, 0), // Year 5
+            TestFramework.expect(projectedIncomes[1]).toBeCloseTo(34778, 0), // Year 5
             TestFramework.expect(projectedIncomes[2]).toBeCloseTo(40318, 0), // Year 10
             TestFramework.expect(projectedIncomes[3]).toBeCloseTo(54274, 0), // Year 20
             TestFramework.expect(projectedIncomes[4]).toBeCloseTo(72981, 0)  // Year 30

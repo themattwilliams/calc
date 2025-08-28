@@ -123,8 +123,59 @@ const TestFramework = {
                     throw new Error(`Expected ${actual} to be less than ${expected}`);
                 }
                 return passed;
+            },
+            
+            toBeLessThanOrEqual: (expected) => {
+                const passed = actual <= expected;
+                if (!passed) {
+                    throw new Error(`Expected ${actual} to be less than or equal to ${expected}`);
+                }
+                return passed;
+            },
+            
+            toBeGreaterThanOrEqual: (expected) => {
+                const passed = actual >= expected;
+                if (!passed) {
+                    throw new Error(`Expected ${actual} to be greater than or equal to ${expected}`);
+                }
+                return passed;
             }
         };
+        
+        // Add not property for negated assertions
+        const expectObject = baseExpectObject;
+        
+        // Create not object with all negated methods
+        expectObject.not = {
+            toBe: (expected) => {
+                const passed = actual !== expected;
+                if (!passed) {
+                    throw new Error(`Expected ${actual} not to be ${expected}`);
+                }
+                return passed;
+            },
+            
+            toContain: (expected) => {
+                const passed = !actual || !actual.toString().includes(expected);
+                if (!passed) {
+                    throw new Error(`Expected ${actual} not to contain ${expected}`);
+                }
+                return passed;
+            },
+            
+            toBeCloseTo: (expected, precision = 2) => {
+                const multiplier = Math.pow(10, precision);
+                const actualRounded = Math.round(actual * multiplier) / multiplier;
+                const expectedRounded = Math.round(expected * multiplier) / multiplier;
+                const passed = actualRounded !== expectedRounded;
+                if (!passed) {
+                    throw new Error(`Expected ${actual} not to be close to ${expected} (precision: ${precision})`);
+                }
+                return passed;
+            }
+        };
+        
+        return expectObject;
     },
     
     /**
