@@ -13,6 +13,7 @@ const filesToCopy = [
     'index.html',
     'js/calculator.js',
     'js/ui-controller.js',
+    'js/temporary-financing.js',
     'assets/favicon.ico'
 ];
 
@@ -39,10 +40,32 @@ const excludePatterns = [
 
 function createBuildDirectory() {
     if (fs.existsSync(buildDir)) {
-        fs.rmSync(buildDir, { recursive: true });
+        // For Windows, try multiple times to handle file locking
+        let attempts = 3;
+        while (attempts > 0) {
+            try {
+                fs.rmSync(buildDir, { recursive: true, force: true });
+                break;
+            } catch (rmError) {
+                attempts--;
+                if (attempts === 0) {
+                    // If we can't remove it, just continue and overwrite files
+                    console.warn(`⚠️ Could not remove ${buildDir}, continuing with overwrite...`);
+                    break;
+                } else {
+                    // Wait a bit and try again
+                    console.log(`⚠️ Retrying directory removal... (${attempts} attempts left)`);
+                    require('child_process').execSync('timeout /t 1 /nobreak 2>nul || ping 127.0.0.1 -n 2 >nul', { stdio: 'ignore' });
+                }
+            }
+        }
     }
-    fs.mkdirSync(buildDir, { recursive: true });
-    console.log(`✓ Created build directory: ${buildDir}`);
+    
+    // Ensure the directory exists
+    if (!fs.existsSync(buildDir)) {
+        fs.mkdirSync(buildDir, { recursive: true });
+    }
+    console.log(`✓ Build directory ready: ${buildDir}`);
 }
 
 function copyFile(src, dest) {
