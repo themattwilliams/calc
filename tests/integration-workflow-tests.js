@@ -445,7 +445,7 @@ TestFramework.describe('Integration Workflows', function() {
             TestFramework.expect(projectedIncomes[1]).toBeCloseTo(34778, 0), // Year 5
             TestFramework.expect(projectedIncomes[2]).toBeCloseTo(40318, 0), // Year 10
             TestFramework.expect(projectedIncomes[3]).toBeCloseTo(54183, 0), // Year 20
-            TestFramework.expect(projectedIncomes[4]).toBeCloseTo(72981, 0)  // Year 30
+            TestFramework.expect(projectedIncomes[4]).toBeCloseTo(72818, 0)  // Year 30
         ];
         
         return results.every(result => result === true);
