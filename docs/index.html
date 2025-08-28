@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rental Property Analysis Calculator</title>
+    <meta name="description" content="Professional rental property investment analysis calculator based on BiggerPockets methodology">
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Tailwind's gray-900 */
+            color: #e2e8f0; /* Tailwind's gray-200 */
+        }
+        .container {
+            max-width: 1280px;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        
+        /* Input validation styling */
+        .input-error {
+            border-color: #f56565 !important;
+            box-shadow: 0 0 0 1px #f56565 !important;
+        }
+        .input-valid {
+            border-color: #48bb78 !important;
+        }
+        .error-message {
+            color: #f56565;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+        .error-message.show {
+            display: block;
+        }
+        
+        /* Chart container styling */
+        .chart-container {
+            height: 400px;
+        }
+        
+        /* Metric link styling */
+        .metric-link {
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            text-decoration-color: #4299e1;
+            cursor: pointer;
+            transition: color 0.2s ease-in-out;
+        }
+        .metric-link:hover {
+            color: #63b3ed;
+        }
+        
+        /* Custom tooltip */
+        .custom-tooltip {
+            position: absolute;
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            z-index: 50;
+            white-space: pre;
+            border: 1px solid #4a5568;
+            max-width: 300px;
+        }
+        
+        /* Quick entry buttons */
+        .btn-quick-entry {
+            @apply px-3 py-1 text-sm bg-gray-600 hover:bg-gray-500 rounded-md transition-colors duration-200 ease-in-out;
+        }
+        .text-calculation {
+            @apply text-sm text-gray-400 mt-1;
+        }
+        
+        /* BiggerPockets branding */
+        .bp-logo {
+            max-height: 40px;
+            filter: brightness(1.2);
+        }
+        
+        /* Test runner link */
+        .test-runner-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4299e1;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            z-index: 100;
+            transition: background-color 0.2s;
+        }
+        .test-runner-link:hover {
+            background: #3182ce;
+        }
+        
+        /* Disclaimer styling */
+        .disclaimer {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        .disclaimer h3 {
+            color: #fbb6ce;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .disclaimer p {
+            margin-bottom: 8px;
+            color: #cbd5e0;
+        }
+        
+        /* Loading spinner for calculations */
+        .calculating {
+            opacity: 0.6;
+            position: relative;
+        }
+        .calculating::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #4299e1;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    <!-- GitHub Pages Meta Tags -->
+    <meta name="description" content="Professional rental property investment analysis calculator with real-time calculations, financial projections, and comprehensive reporting.">
+    <meta name="keywords" content="real estate, rental property, investment calculator, cash flow, ROI, cap rate, property analysis">
+    <meta name="author" content="Rental Property Analysis Calculator">
+    <meta property="og:title" content="Rental Property Analysis Calculator">
+    <meta property="og:description" content="Professional rental property investment analysis with real-time calculations and comprehensive reporting.">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    </head>
+<body class="p-4 md:p-8">
+    <!-- Test Runner Link -->
+    
+
+    <div class="container mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="flex items-center justify-center mb-4">
+                <h1 class="text-3xl md:text-4xl font-bold text-white">Rental Property Analysis Calculator</h1>
+            </div>
+            <p class="text-gray-400 text-lg">Professional real estate investment analysis tool</p>
+        </div>
+
+        <!-- Save/Load buttons at the top -->
+        <div class="flex justify-end gap-3 mb-6">
+            <button id="loadBtn" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200 flex items-center gap-2">
+                <span>📂</span> Load from Markdown
+            </button>
+            <button id="saveTopBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200 flex items-center gap-2">
+                <span>💾</span> Save as Markdown
+            </button>
+        </div>
+
+        <!-- Main container -->
+        <div class="grid grid-cols-1 gap-8">
+            <!-- Input Form Section -->
+            <div class="bg-gray-800 p-6 md:p-8 rounded-lg shadow-xl border border-gray-700">
+                <h2 class="text-2xl font-semibold mb-6">Financial Inputs</h2>
+                
+                <div class="space-y-6">
+                    <!-- Property Identification -->
+                    <div class="bg-gray-700 p-5 rounded-lg border border-gray-600">
+                        <h3 class="text-lg font-medium text-gray-200 mb-4">Property Identification</h3>
+                        <div>
+                            <label for="propertyAddress" class="block text-gray-400">Property Address</label>
+                            <input type="text" id="propertyAddress" placeholder="Enter property address (e.g., 123 Main St)" 
+                                   class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                        </div>
+                    </div>
+
+                    <!-- Property Information -->
+                    <div class="bg-gray-700 p-5 rounded-lg border border-gray-600">
+                        <h3 class="text-lg font-medium text-gray-200 mb-4">Property Information</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="purchasePrice" class="block text-gray-400">Purchase Price *</label>
+                                <input type="number" id="purchasePrice" value="275000" min="1000" max="50000000" 
+                                       class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                <div class="error-message" id="purchasePrice-error"></div>
+                            </div>
+                            <div>
+                                <label for="purchaseClosingCosts" class="block text-gray-400">Purchase Closing Costs</label>
+                                <div class="flex items-center space-x-2">
+                                    <input type="number" id="purchaseClosingCosts" value="6000" min="0" max="1000000"
+                                           class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <div class="flex space-x-1">
+                                        <button class="btn-quick-entry" data-target="purchaseClosingCosts" data-type="percent" data-value="2">2%</button>
+                                        <button class="btn-quick-entry" data-target="purchaseClosingCosts" data-type="percent" data-value="3">3%</button>
+                                    </div>
+                                </div>
+                                <div class="text-calculation" id="closingCostsText"></div>
+                                <div class="error-message" id="purchaseClosingCosts-error"></div>
+                            </div>
+                            <div>
+                                <label for="estimatedRepairCosts" class="block text-gray-400">Estimated Repair Costs</label>
+                                <div class="flex items-center space-x-2">
+                                    <input type="number" id="estimatedRepairCosts" value="0" min="0" max="1000000"
+                                           class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <div class="flex flex-wrap gap-1">
+                                        <button class="btn-quick-entry" data-target="estimatedRepairCosts" data-type="fixed" data-value="5000">$5k</button>
+                                        <button class="btn-quick-entry" data-target="estimatedRepairCosts" data-type="fixed" data-value="10000">$10k</button>
+                                        <button class="btn-quick-entry" data-target="estimatedRepairCosts" data-type="fixed" data-value="20000">$20k</button>
+                                        <button class="btn-quick-entry" data-target="estimatedRepairCosts" data-type="fixed" data-value="30000">$30k</button>
+                                        <button class="btn-quick-entry" data-target="estimatedRepairCosts" data-type="fixed" data-value="40000">$40k</button>
+                                        <button class="btn-quick-entry" data-target="estimatedRepairCosts" data-type="fixed" data-value="50000">$50k</button>
+                                        <button class="btn-quick-entry" data-target="estimatedRepairCosts" data-type="fixed" data-value="60000">$60k</button>
+                                    </div>
+                                </div>
+                                <div class="error-message" id="estimatedRepairCosts-error"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financing Information -->
+                    <div class="bg-gray-700 p-5 rounded-lg border border-gray-600">
+                        <h3 class="text-lg font-medium text-gray-200 mb-4">Financing</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="downPayment" class="block text-gray-400">Down Payment *</label>
+                                <div class="flex items-center space-x-2">
+                                    <input type="number" id="downPayment" value="68750" min="0"
+                                           class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <div class="flex space-x-1">
+                                        <button class="btn-quick-entry" data-target="downPayment" data-type="percent" data-value="20">20%</button>
+                                        <button class="btn-quick-entry" data-target="downPayment" data-type="percent" data-value="25">25%</button>
+                                        <button class="btn-quick-entry" data-target="downPayment" data-type="percent" data-value="30">30%</button>
+                                    </div>
+                                </div>
+                                <div class="text-calculation" id="downPaymentText"></div>
+                                <div class="error-message" id="downPayment-error"></div>
+                            </div>
+                            <div>
+                                <label for="loanInterestRate" class="block text-gray-400">Loan Interest Rate (%) *</label>
+                                <input type="number" id="loanInterestRate" value="6.00" step="0.01" min="0.1" max="15.0"
+                                       class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                <div class="error-message" id="loanInterestRate-error"></div>
+                            </div>
+                            <div>
+                                <label for="amortizedOver" class="block text-gray-400">Amortized Over (Years)</label>
+                                <select id="amortizedOver" class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <option value="10">10 years</option>
+                                    <option value="15">15 years</option>
+                                    <option value="20">20 years</option>
+                                    <option value="25">25 years</option>
+                                    <option value="30" selected>30 years</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="loanFees" class="block text-gray-400">Loan Fees</label>
+                                <input type="number" id="loanFees" value="0" min="0" max="100000"
+                                       class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                <div class="error-message" id="loanFees-error"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Income -->
+                    <div class="bg-gray-700 p-5 rounded-lg border border-gray-600">
+                        <h3 class="text-lg font-medium text-gray-200 mb-4">Income</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="monthlyRent" class="block text-gray-400">Monthly Rent *</label>
+                                <input type="number" id="monthlyRent" value="1860" min="1" max="100000"
+                                       class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                <div class="error-message" id="monthlyRent-error"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expenses -->
+                    <div class="bg-gray-700 p-5 rounded-lg border border-gray-600">
+                        <h3 class="text-lg font-medium text-gray-200 mb-4">Expenses</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="monthlyPropertyTaxes" class="block text-gray-400">Property Taxes (Monthly)</label>
+                                <input type="number" id="monthlyPropertyTaxes" value="484" min="0" max="100000"
+                                       class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                <div class="text-calculation" id="annualizedTaxRate"></div>
+                                <div class="error-message" id="monthlyPropertyTaxes-error"></div>
+                            </div>
+                            <div>
+                                <label for="monthlyInsurance" class="block text-gray-400">Insurance (Monthly)</label>
+                                <input type="number" id="monthlyInsurance" value="100" min="0" max="10000"
+                                       class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                <div class="error-message" id="monthlyInsurance-error"></div>
+                            </div>
+                            <div>
+                                <label for="monthlyManagement" class="block text-gray-400">Management (%)</label>
+                                <div class="flex items-center space-x-2">
+                                    <input type="number" id="monthlyManagement" value="10" step="0.1" min="0" max="50"
+                                           class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <div class="flex space-x-1">
+                                        <button class="btn-quick-entry" data-target="monthlyManagement" data-type="fixed" data-value="8">8%</button>
+                                        <button class="btn-quick-entry" data-target="monthlyManagement" data-type="fixed" data-value="9">9%</button>
+                                        <button class="btn-quick-entry" data-target="monthlyManagement" data-type="fixed" data-value="10">10%</button>
+                                        <button class="btn-quick-entry" data-target="monthlyManagement" data-type="fixed" data-value="11">11%</button>
+                                        <button class="btn-quick-entry" data-target="monthlyManagement" data-type="fixed" data-value="12">12%</button>
+                                    </div>
+                                </div>
+                                <div class="error-message" id="monthlyManagement-error"></div>
+                            </div>
+                            <div>
+                                <label for="quarterlyHoaFees" class="block text-gray-400">Quarterly HOA Fees</label>
+                                <input type="number" id="quarterlyHoaFees" value="0" min="0" max="15000"
+                                       class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                <div class="text-calculation" id="hoaFeeText"></div>
+                                <div class="error-message" id="quarterlyHoaFees-error"></div>
+                            </div>
+                            
+                            <!-- Utilities Section -->
+                            <div class="bg-gray-600 p-4 rounded-lg">
+                                <h4 class="text-md font-medium text-gray-200 mb-3">Utilities (Monthly)</h4>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label for="electricityUtility" class="block text-gray-400 text-sm">Electricity</label>
+                                        <input type="number" id="electricityUtility" value="0" min="0" max="1000"
+                                               class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 text-sm">
+                                    </div>
+                                    <div>
+                                        <label for="gasUtility" class="block text-gray-400 text-sm">Gas</label>
+                                        <input type="number" id="gasUtility" value="0" min="0" max="1000"
+                                               class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 text-sm">
+                                    </div>
+                                    <div>
+                                        <label for="waterSewerUtility" class="block text-gray-400 text-sm">Water & Sewer</label>
+                                        <input type="number" id="waterSewerUtility" value="0" min="0" max="1000"
+                                               class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 text-sm">
+                                    </div>
+                                    <div>
+                                        <label for="garbageUtility" class="block text-gray-400 text-sm">Garbage</label>
+                                        <input type="number" id="garbageUtility" value="0" min="0" max="1000"
+                                               class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 text-sm">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="otherMonthlyExpenses" class="block text-gray-400">Other Monthly Expenses</label>
+                                <input type="number" id="otherMonthlyExpenses" value="0" min="0" max="50000"
+                                       class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                <div class="error-message" id="otherMonthlyExpenses-error"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Growth Projections -->
+                    <div class="bg-gray-700 p-5 rounded-lg border border-gray-600">
+                        <h3 class="text-lg font-medium text-gray-200 mb-4">Growth Projections</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="annualIncomeGrowth" class="block text-gray-400">Annual Income Growth (%)</label>
+                                <div class="flex items-center space-x-2">
+                                    <input type="number" id="annualIncomeGrowth" value="3.0" step="0.1" min="0" max="20"
+                                           class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <div class="flex space-x-1">
+                                        <button class="btn-quick-entry" data-target="annualIncomeGrowth" data-type="fixed" data-value="1">1%</button>
+                                        <button class="btn-quick-entry" data-target="annualIncomeGrowth" data-type="fixed" data-value="2">2%</button>
+                                        <button class="btn-quick-entry" data-target="annualIncomeGrowth" data-type="fixed" data-value="3">3%</button>
+                                        <button class="btn-quick-entry" data-target="annualIncomeGrowth" data-type="fixed" data-value="4">4%</button>
+                                        <button class="btn-quick-entry" data-target="annualIncomeGrowth" data-type="fixed" data-value="5">5%</button>
+                                    </div>
+                                </div>
+                                <div class="error-message" id="annualIncomeGrowth-error"></div>
+                            </div>
+                            <div>
+                                <label for="annualExpenseGrowth" class="block text-gray-400">Annual Expense Growth (%)</label>
+                                <div class="flex items-center space-x-2">
+                                    <input type="number" id="annualExpenseGrowth" value="3.0" step="0.1" min="0" max="20"
+                                           class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <div class="flex space-x-1">
+                                        <button class="btn-quick-entry" data-target="annualExpenseGrowth" data-type="fixed" data-value="1">1%</button>
+                                        <button class="btn-quick-entry" data-target="annualExpenseGrowth" data-type="fixed" data-value="2">2%</button>
+                                        <button class="btn-quick-entry" data-target="annualExpenseGrowth" data-type="fixed" data-value="3">3%</button>
+                                        <button class="btn-quick-entry" data-target="annualExpenseGrowth" data-type="fixed" data-value="4">4%</button>
+                                        <button class="btn-quick-entry" data-target="annualExpenseGrowth" data-type="fixed" data-value="5">5%</button>
+                                    </div>
+                                </div>
+                                <div class="error-message" id="annualExpenseGrowth-error"></div>
+                            </div>
+                            <div>
+                                <label for="annualPropertyValueGrowth" class="block text-gray-400">Annual Property Value Growth (%)</label>
+                                <div class="flex items-center space-x-2">
+                                    <input type="number" id="annualPropertyValueGrowth" value="4.0" step="0.1" min="0" max="20"
+                                           class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                                    <div class="flex space-x-1">
+                                        <button class="btn-quick-entry" data-target="annualPropertyValueGrowth" data-type="fixed" data-value="1">1%</button>
+                                        <button class="btn-quick-entry" data-target="annualPropertyValueGrowth" data-type="fixed" data-value="2">2%</button>
+                                        <button class="btn-quick-entry" data-target="annualPropertyValueGrowth" data-type="fixed" data-value="3">3%</button>
+                                        <button class="btn-quick-entry" data-target="annualPropertyValueGrowth" data-type="fixed" data-value="4">4%</button>
+                                        <button class="btn-quick-entry" data-target="annualPropertyValueGrowth" data-type="fixed" data-value="5">5%</button>
+                                    </div>
+                                </div>
+                                <div class="error-message" id="annualPropertyValueGrowth-error"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="bg-gray-800 p-6 md:p-8 rounded-lg shadow-xl border border-gray-700">
+                <h2 class="text-2xl font-semibold mb-6">Financial Analysis</h2>
+
+                <!-- Initial Metrics -->
+                <div class="bg-gray-700 p-5 rounded-lg border border-gray-600 mb-6">
+                    <h3 class="text-lg font-medium text-gray-200 mb-4">Initial Metrics</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-gray-300">
+                        <div><strong class="text-gray-100">Total Cost of Project:</strong> <a href="#" class="metric-link" data-tooltip-id="totalCost"><span id="totalCostOfProject">$0.00</span></a></div>
+                        <div><strong class="text-gray-100">Total Cash Needed:</strong> <a href="#" class="metric-link" data-tooltip-id="cashNeeded"><span id="totalCashNeeded">$0.00</span></a></div>
+                        <div><strong class="text-gray-100">Loan Amount:</strong> <a href="#" class="metric-link" data-tooltip-id="loanAmount"><span id="loanAmount">$0.00</span></a></div>
+                        <div><strong class="text-gray-100">Monthly P&I:</strong> <a href="#" class="metric-link" data-tooltip-id="monthlyPI"><span id="monthlyPI">$0.00</span></a></div>
+                        <div><strong class="text-gray-100">Monthly Cash Flow:</strong> <a href="#" class="metric-link" data-tooltip-id="cashFlow"><span id="monthlyCashFlow">$0.00</span></a></div>
+                        <div><strong class="text-gray-100">Cash-on-Cash ROI:</strong> <a href="#" class="metric-link" data-tooltip-id="cashROI"><span id="cashOnCashROI">0.0%</span></a></div>
+                        <div><strong class="text-gray-100">Annual NOI:</strong> <a href="#" class="metric-link" data-tooltip-id="annualNOI"><span id="annualNOI">$0.00</span></a></div>
+                        <div><strong class="text-gray-100">Pro Forma Cap Rate:</strong> <a href="#" class="metric-link" data-tooltip-id="capRate"><span id="capRate">0.0%</span></a></div>
+                        <div><strong class="text-gray-100">Total Monthly Expenses:</strong> <a href="#" class="metric-link" data-tooltip-id="monthlyExpenses"><span id="totalMonthlyExpenses">$0.00</span></a></div>
+                    </div>
+                </div>
+
+                <!-- Additional Metrics -->
+                <div class="bg-gray-700 p-5 rounded-lg border border-gray-600">
+                    <h3 class="text-lg font-medium text-gray-200 mb-4">Additional Key Metrics</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-gray-300">
+                        <div><strong class="text-gray-100">Gross Rent Multiplier:</strong> <a href="#" class="metric-link" data-tooltip-id="grm"><span id="grossRentMultiplier">0.00</span></a></div>
+                        <div><strong class="text-gray-100">Debt Coverage Ratio:</strong> <a href="#" class="metric-link" data-tooltip-id="dcr"><span id="debtCoverageRatio">0.00</span></a></div>
+                        <div><strong class="text-gray-100">Return on Equity:</strong> <a href="#" class="metric-link" data-tooltip-id="roe"><span id="returnOnEquity">0.0%</span></a></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="bg-gray-800 p-6 md:p-8 rounded-lg shadow-xl border border-gray-700">
+                <h2 class="text-2xl font-semibold mb-6">30-Year Financial Projections</h2>
+                <div class="space-y-8">
+                    <div class="chart-container">
+                        <h4 class="text-center font-medium mb-2 text-gray-200">Income, Expenses & Cash Flow</h4>
+                        <canvas id="incomeExpensesChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4 class="text-center font-medium mb-2 text-gray-200">Equity & Property Value</h4>
+                        <canvas id="equityValueChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4 class="text-center font-medium mb-2 text-gray-200">Loan Principal vs. Interest</h4>
+                        <canvas id="amortizationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hidden file input for loading markdown files -->
+        <input type="file" id="markdownFileInput" accept=".md,.txt" style="display: none;">
+        
+        <!-- Save/Load buttons at the bottom -->
+        <div class="flex justify-end gap-3 mt-6">
+            <button id="loadBottomBtn" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200 flex items-center gap-2">
+                <span>📂</span> Load from Markdown
+            </button>
+            <button id="saveBottomBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200 flex items-center gap-2">
+                <span>💾</span> Save as Markdown
+            </button>
+        </div>
+        
+        <!-- Legal Disclaimers -->
+        <div class="disclaimer">
+            <h3>⚠️ Important Disclaimers</h3>
+            <p><strong>For Informational Purposes Only:</strong> This tool is designed for informational and educational purposes only and does not constitute investment advice, financial advice, or any form of professional recommendation.</p>
+            <p><strong>Not Investment Advice:</strong> The calculations and projections provided are estimates based on the inputs you provide and should not be considered as personalized investment advice.</p>
+            <p><strong>Consult Professionals:</strong> Before making any investment decisions, please consult with qualified financial advisors, tax professionals, real estate professionals, and legal counsel.</p>
+            <p><strong>Risk Warning:</strong> Real estate investments involve significant risk and may lose value. Past performance does not guarantee future results.</p>
+            <p><strong>Accuracy Disclaimer:</strong> While we strive for accuracy, all calculations should be independently verified. We make no warranties regarding the accuracy or completeness of the information provided.</p>
+            <p><strong>BiggerPockets Attribution:</strong> This calculator is based on the BiggerPockets rental analysis methodology. Visit <a href="https://www.biggerpockets.com" class="text-blue-400 hover:text-blue-300">BiggerPockets.com</a> for comprehensive real estate investment education.</p>
+        </div>
+    </div>
+    
+    <!-- Custom Tooltip Element -->
+    <div id="custom-tooltip" class="custom-tooltip"></div>
+
+    <!-- Load Calculator Functions -->
+    <script src="js/calculator.js"></script>
+    
+    <!-- Load UI Controller -->
+    <script src="js/ui-controller.js"></script>
+</body>
+</html>

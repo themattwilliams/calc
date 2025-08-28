@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rental Property Analysis - Test Runner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #00A651 0%, #007A3E 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #00A651;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: #007A3E;
+            transform: translateY(-2px);
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .btn.secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn.danger {
+            background: #dc3545;
+        }
+
+        .btn.danger:hover {
+            background: #c82333;
+        }
+
+        #test-results {
+            margin-top: 30px;
+        }
+
+        .test-summary {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .test-summary h3 {
+            color: #495057;
+            margin-bottom: 15px;
+        }
+
+        .test-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat {
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .stat.passed {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .stat.failed {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .stat.total {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .stat.duration {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .test-categories {
+            margin: 20px 0;
+        }
+
+        .test-categories h4 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .category {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+
+        .category.all-passed {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+
+        .category.has-failures {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+
+        .test-failures {
+            margin-top: 20px;
+        }
+
+        .test-failures h4 {
+            color: #721c24;
+            margin-bottom: 15px;
+        }
+
+        .failure {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .failure-title {
+            font-weight: 600;
+            color: #721c24;
+            margin-bottom: 5px;
+        }
+
+        .failure-error {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #856404;
+            background: #fff3cd;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ffeaa7;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #00A651;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .info-section {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-section h3 {
+            color: #004085;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            color: #004085;
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .test-controls {
+                flex-direction: column;
+            }
+
+            .test-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .category {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Test Runner</h1>
+            <p>Rental Property Analysis Calculator - Test Suite</p>
+        </div>
+
+        <div class="content">
+            <div class="info-section">
+                <h3>About This Test Runner</h3>
+                <p><strong>Purpose:</strong> Comprehensive validation of all features including enhanced UI, quick entry, and export functionality</p>
+                <p><strong>Framework:</strong> Lightweight vanilla JavaScript testing (no external dependencies)</p>
+                <p><strong>Coverage:</strong> Financial calculations, input validation, UI enhancements, markdown export, performance benchmarks, and complete workflow integration</p>
+                <p><strong>Test Categories:</strong> 6 categories with 140+ individual tests covering all functionality</p>
+            </div>
+
+            <div class="test-controls">
+                <button id="run-all-tests" class="btn">🚀 Run All Tests</button>
+                <button id="run-calculation-tests" class="btn secondary">🧮 Calculation Tests</button>
+                <button id="run-validation-tests" class="btn secondary">✅ Validation Tests</button>
+                <button id="run-performance-tests" class="btn secondary">⚡ Performance Tests</button>
+                <button id="run-ui-enhancement-tests" class="btn secondary">🎨 UI Enhancement Tests</button>
+                <button id="run-markdown-tests" class="btn secondary">📄 Markdown Export Tests</button>
+                <button id="run-integration-tests" class="btn secondary">🔗 Integration Tests</button>
+                <button id="clear-results" class="btn danger">🗑️ Clear Results</button>
+                <a href="index.html" class="btn secondary">🏠 Back to App</a>
+            </div>
+
+            <div id="test-results">
+                <div class="loading">
+                    Ready to run tests...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Framework -->
+    <script src="js/test-framework.js"></script>
+    
+    <!-- Load actual calculator functions for testing -->
+    <script src="js/calculator.js"></script>
+    
+    <!-- Test Suites -->
+    <script src="tests/calculation-tests.js"></script>
+    <script src="tests/validation-tests.js"></script>
+    <script src="tests/performance-tests.js"></script>
+    <script src="tests/ui-enhancement-tests.js"></script>
+    <script src="tests/markdown-export-tests.js"></script>
+    <script src="tests/integration-workflow-tests.js"></script>
+    
+    <!-- Test Runner Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const runAllBtn = document.getElementById('run-all-tests');
+            const runCalculationBtn = document.getElementById('run-calculation-tests');
+            const runValidationBtn = document.getElementById('run-validation-tests');
+            const runPerformanceBtn = document.getElementById('run-performance-tests');
+            const runUIEnhancementBtn = document.getElementById('run-ui-enhancement-tests');
+            const runMarkdownBtn = document.getElementById('run-markdown-tests');
+            const runIntegrationBtn = document.getElementById('run-integration-tests');
+            const clearResultsBtn = document.getElementById('clear-results');
+            const resultsContainer = document.getElementById('test-results');
+            
+            function showLoading(message = 'Running tests...') {
+                resultsContainer.innerHTML = `<div class="loading">${message}</div>`;
+            }
+            
+            function runTestsByCategory(category) {
+                showLoading(`Running ${category} tests...`);
+                
+                // Small delay to show loading state
+                setTimeout(() => {
+                    const filteredTests = TestFramework.tests.filter(test => 
+                        category === 'all' || test.category === category
+                    );
+                    
+                    if (filteredTests.length === 0) {
+                        resultsContainer.innerHTML = `
+                            <div class="info-section">
+                                <h3>No Tests Found</h3>
+                                <p>No tests found for category: ${category}</p>
+                                <p>Make sure test files are loaded and contain tests for this category.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    // Temporarily store original tests and run only filtered ones
+                    const originalTests = TestFramework.tests;
+                    TestFramework.tests = filteredTests;
+                    TestFramework.runAll();
+                    TestFramework.tests = originalTests;
+                }, 100);
+            }
+            
+            runAllBtn.addEventListener('click', () => {
+                showLoading('Running all tests...');
+                setTimeout(() => TestFramework.runAll(), 100);
+            });
+            
+            runCalculationBtn.addEventListener('click', () => {
+                runTestsByCategory('Financial Calculations');
+            });
+            
+            runValidationBtn.addEventListener('click', () => {
+                runTestsByCategory('Input Validation');
+            });
+            
+            runPerformanceBtn.addEventListener('click', () => {
+                runTestsByCategory('Performance');
+            });
+            
+            runUIEnhancementBtn.addEventListener('click', () => {
+                runTestsByCategory('UI Enhancements');
+            });
+            
+            runMarkdownBtn.addEventListener('click', () => {
+                runTestsByCategory('Markdown Export');
+            });
+            
+            runIntegrationBtn.addEventListener('click', () => {
+                runTestsByCategory('Integration Workflows');
+            });
+            
+            clearResultsBtn.addEventListener('click', () => {
+                resultsContainer.innerHTML = `
+                    <div class="loading">
+                        Ready to run tests...
+                    </div>
+                `;
+            });
+            
+            // Check if tests are loaded
+            setTimeout(() => {
+                if (TestFramework.tests.length === 0) {
+                    resultsContainer.innerHTML = `
+                        <div class="info-section">
+                            <h3>⚠️ No Tests Loaded</h3>
+                            <p>Test files are not yet implemented or not loading properly.</p>
+                            <p>This is expected during initial setup. Test files will be created next.</p>
+                        </div>
+                    `;
+                } else {
+                    resultsContainer.innerHTML = `
+                        <div class="info-section">
+                            <h3>✅ Tests Loaded Successfully</h3>
+                            <p><strong>${TestFramework.tests.length}</strong> tests ready to run</p>
+                            <p>Click "Run All Tests" to execute the test suite</p>
+                        </div>
+                    `;
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>

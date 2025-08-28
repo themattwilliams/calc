@@ -1,0 +1,33 @@
+{
+  "name": "rental-property-analysis-calculator",
+  "version": "1.0.0",
+  "description": "A comprehensive rental property investment analysis tool with testing suite",
+  "main": "index.html",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "install:playwright": "playwright install",
+    "build": "node build-github-pages.js",
+    "build:clean": "rimraf docs && node build-github-pages.js",
+    "deploy:preview": "npm run build && cd docs && python -m http.server 8080",
+    "deploy:validate": "npm run build && npm run test:production",
+    "test:production": "playwright test --project=chromium --grep 'GitHub Pages' --base-url http://localhost:8080"
+  },
+  "keywords": [
+    "real-estate",
+    "investment",
+    "calculator",
+    "rental-property",
+    "analysis"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}
