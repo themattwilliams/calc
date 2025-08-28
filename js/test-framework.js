@@ -142,11 +142,8 @@ const TestFramework = {
             }
         };
         
-        // Add not property for negated assertions
-        const expectObject = baseExpectObject;
-        
         // Create not object with all negated methods
-        expectObject.not = {
+        baseExpectObject.not = {
             toBe: (expected) => {
                 const passed = actual !== expected;
                 if (!passed) {
@@ -175,7 +172,7 @@ const TestFramework = {
             }
         };
         
-        return expectObject;
+        return baseExpectObject;
     },
     
     /**
