@@ -142,35 +142,47 @@ const TestFramework = {
             }
         };
         
-        // Create not object with all negated methods
-        baseExpectObject.not = {
-            toBe: (expected) => {
-                const passed = actual !== expected;
-                if (!passed) {
-                    throw new Error(`Expected ${actual} not to be ${expected}`);
+        // Create not object with all negated methods - using Object.defineProperty for better compatibility
+        Object.defineProperty(baseExpectObject, 'not', {
+            value: {
+                toBe: (expected) => {
+                    const passed = actual !== expected;
+                    if (!passed) {
+                        throw new Error(`Expected ${actual} not to be ${expected}`);
+                    }
+                    return passed;
+                },
+                
+                toContain: (expected) => {
+                    const passed = !actual || !actual.toString().includes(expected);
+                    if (!passed) {
+                        throw new Error(`Expected ${actual} not to contain ${expected}`);
+                    }
+                    return passed;
+                },
+                
+                toBeCloseTo: (expected, precision = 2) => {
+                    const multiplier = Math.pow(10, precision);
+                    const actualRounded = Math.round(actual * multiplier) / multiplier;
+                    const expectedRounded = Math.round(expected * multiplier) / multiplier;
+                    const passed = actualRounded !== expectedRounded;
+                    if (!passed) {
+                        throw new Error(`Expected ${actual} not to be close to ${expected} (precision: ${precision})`);
+                    }
+                    return passed;
                 }
-                return passed;
             },
-            
-            toContain: (expected) => {
-                const passed = !actual || !actual.toString().includes(expected);
-                if (!passed) {
-                    throw new Error(`Expected ${actual} not to contain ${expected}`);
-                }
-                return passed;
-            },
-            
-            toBeCloseTo: (expected, precision = 2) => {
-                const multiplier = Math.pow(10, precision);
-                const actualRounded = Math.round(actual * multiplier) / multiplier;
-                const expectedRounded = Math.round(expected * multiplier) / multiplier;
-                const passed = actualRounded !== expectedRounded;
-                if (!passed) {
-                    throw new Error(`Expected ${actual} not to be close to ${expected} (precision: ${precision})`);
-                }
-                return passed;
-            }
-        };
+            writable: false,
+            enumerable: true,
+            configurable: false
+        });
+        
+        // Debug: Verify not property exists
+        if (typeof baseExpectObject.not === 'undefined') {
+            console.error('ERROR: baseExpectObject.not is undefined!');
+        } else if (typeof baseExpectObject.not.toContain === 'undefined') {
+            console.error('ERROR: baseExpectObject.not.toContain is undefined!');
+        }
         
         return baseExpectObject;
     },
