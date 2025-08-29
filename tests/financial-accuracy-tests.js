@@ -92,7 +92,14 @@ TestFramework.describe('Financial Accuracy', function() {
         });
         
         if (!allWithinTolerance) {
-            console.log('Mortgage precision failures:', results.filter(r => !r.withinTolerance));
+            const failures = results.filter(r => !r.withinTolerance);
+            console.error('Mortgage Precision - Detailed Failures');
+            failures.forEach(f => {
+                console.error(`Scenario: ${f.scenario} | Expected: ${f.expected.toFixed(2)} | Calculated: ${f.calculated.toFixed(2)} | Difference: ${f.difference.toFixed(4)} | Tolerance: 0.01`);
+            });
+            if (console.table) {
+                console.table(failures);
+            }
         }
         
         return TestFramework.expect(allWithinTolerance).toBe(true);
@@ -388,7 +395,35 @@ TestFramework.describe('Financial Accuracy', function() {
         const roiReasonable = cashOnCashROI >= 5 && cashOnCashROI <= 20;
         const onePercentRule = monthlyRent >= (purchasePrice * 0.008); // At least 0.8% rule
         
-        return TestFramework.expect(cashFlowPositive && roiReasonable && onePercentRule).toBe(true);
+        const passed = cashFlowPositive && roiReasonable && onePercentRule;
+        if (!passed) {
+            console.error('Investment Property Scenario - Detailed Values', {
+                purchasePrice,
+                downPayment,
+                loanAmount,
+                interestRate,
+                monthlyPayment,
+                monthlyRent,
+                vacancyRate,
+                effectiveRent,
+                monthlyTaxes,
+                monthlyInsurance,
+                monthlyMaintenance,
+                totalExpenses,
+                netCashFlow,
+                annualCashFlow,
+                cashOnCashROI: Number(cashOnCashROI.toFixed(4)),
+                checks: {
+                    cashFlowPositive,
+                    roiReasonable,
+                    onePercentRule,
+                    roiRange: '[5%, 20%]',
+                    onePercentThreshold: purchasePrice * 0.008
+                }
+            });
+        }
+        
+        return TestFramework.expect(passed).toBe(true);
     });
     
     // ========================================
@@ -592,7 +627,21 @@ TestFramework.describe('Financial Accuracy', function() {
         // Both should give reasonable 20-year growth
         const reasonableGrowth = compoundResult > 160000 && compoundResult < 170000;
         
-        return TestFramework.expect(precisionMaintained && reasonableGrowth).toBe(true);
+        const passed = precisionMaintained && reasonableGrowth;
+        if (!passed) {
+            console.error('Cumulative Error Analysis - Detailed Values', {
+                startingValue,
+                growthRate,
+                years: 20,
+                compoundResult: Number(compoundResult.toFixed(6)),
+                iterativeResult: Number(iterativeResult.toFixed(6)),
+                difference: Number(difference.toFixed(8)),
+                thresholds: { differenceLT: 0.05, growthRange: '[160000, 170000]' },
+                checks: { precisionMaintained, reasonableGrowth }
+            });
+        }
+        
+        return TestFramework.expect(passed).toBe(true);
     });
 });
 
