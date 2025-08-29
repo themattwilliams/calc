@@ -48,6 +48,19 @@ const TestFramework = {
     },
     
     /**
+     * Alias for describe - creates a test suite
+     * @param {string} category - Category name for grouping tests
+     * @param {function} setupFunction - Function containing tests
+     */
+    suite(category, setupFunction) {
+        this.currentCategory = category;
+        if (setupFunction && typeof setupFunction === 'function') {
+            setupFunction();
+        }
+        this.currentCategory = null;
+    },
+    
+    /**
      * Expectation functions for assertions
      * @param {*} actual - The actual value to test
      */
