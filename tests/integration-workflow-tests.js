@@ -492,6 +492,372 @@ TestFramework.describe('Integration Workflows', function() {
         
         return results.every(result => result === true);
     });
+    // ========================================
+    // ADVANCED INTEGRATION SCENARIOS
+    // ========================================
+
+    TestFramework.test('Advanced Integration - Multi-Property Portfolio Analysis', function() {
+        const properties = [
+            {
+                name: "Downtown Condo",
+                purchasePrice: 400000,
+                downPayment: 80000,
+                monthlyRent: 2800,
+                monthlyExpenses: 1200,
+                interestRate: 5.5
+            },
+            {
+                name: "Suburban House",
+                purchasePrice: 300000,
+                downPayment: 60000,
+                monthlyRent: 2200,
+                monthlyExpenses: 900,
+                interestRate: 6.0
+            },
+            {
+                name: "Urban Duplex",
+                purchasePrice: 500000,
+                downPayment: 100000,
+                monthlyRent: 3500,
+                monthlyExpenses: 1500,
+                interestRate: 5.25
+            }
+        ];
+        
+        const portfolioResults = properties.map(property => {
+            const loanAmount = property.purchasePrice - property.downPayment;
+            const monthlyPayment = calculateMortgagePayment(loanAmount, property.interestRate, 30);
+            const monthlyCashFlow = property.monthlyRent - property.monthlyExpenses - monthlyPayment;
+            const annualCashFlow = monthlyCashFlow * 12;
+            const cashOnCashROI = (annualCashFlow / property.downPayment) * 100;
+            
+            return {
+                name: property.name,
+                monthlyPayment,
+                monthlyCashFlow,
+                cashOnCashROI,
+                profitable: monthlyCashFlow > 0
+            };
+        });
+        
+        const allCalculationsValid = portfolioResults.every(result => 
+            isFinite(result.monthlyPayment) &&
+            isFinite(result.monthlyCashFlow) &&
+            isFinite(result.cashOnCashROI)
+        );
+        
+        const profitableProperties = portfolioResults.filter(r => r.profitable).length;
+        const portfolioValue = portfolioResults.reduce((sum, r) => sum + r.monthlyCashFlow, 0);
+        
+        return TestFramework.expect(allCalculationsValid).toBe(true) &&
+               TestFramework.expect(profitableProperties).toBeGreaterThan(0) &&
+               TestFramework.expect(portfolioValue).toBeGreaterThan(0);
+    });
+
+    TestFramework.test('Advanced Integration - Market Cycle Simulation', function() {
+        const baseProperty = {
+            purchasePrice: 350000,
+            downPayment: 70000,
+            monthlyRent: 2500,
+            monthlyExpenses: 1000,
+            interestRate: 5.75
+        };
+        
+        // Simulate different market conditions
+        const marketCycles = [
+            { name: "Bull Market", valueGrowth: 0.08, rentGrowth: 0.05, expenseGrowth: 0.03 },
+            { name: "Bear Market", valueGrowth: -0.02, rentGrowth: 0.01, expenseGrowth: 0.04 },
+            { name: "Stable Market", valueGrowth: 0.03, rentGrowth: 0.03, expenseGrowth: 0.025 },
+            { name: "Recovery Market", valueGrowth: 0.06, rentGrowth: 0.04, expenseGrowth: 0.02 }
+        ];
+        
+        const cycleResults = marketCycles.map(cycle => {
+            const loanAmount = baseProperty.purchasePrice - baseProperty.downPayment;
+            const monthlyPayment = calculateMortgagePayment(loanAmount, baseProperty.interestRate, 30);
+            
+            // 5-year projection for each cycle
+            const projections = [];
+            let currentRent = baseProperty.monthlyRent;
+            let currentExpenses = baseProperty.monthlyExpenses;
+            let currentValue = baseProperty.purchasePrice;
+            
+            for (let year = 1; year <= 5; year++) {
+                currentRent *= (1 + cycle.rentGrowth);
+                currentExpenses *= (1 + cycle.expenseGrowth);
+                currentValue *= (1 + cycle.valueGrowth);
+                
+                const cashFlow = currentRent - currentExpenses - monthlyPayment;
+                const equity = currentValue - (loanAmount * Math.pow(0.98, year)); // Simplified loan balance
+                
+                projections.push({
+                    year,
+                    rent: currentRent,
+                    expenses: currentExpenses,
+                    value: currentValue,
+                    cashFlow,
+                    equity
+                });
+            }
+            
+            return {
+                cycle: cycle.name,
+                projections,
+                finalCashFlow: projections[4].cashFlow,
+                finalEquity: projections[4].equity
+            };
+        });
+        
+        const allProjectionsValid = cycleResults.every(result =>
+            result.projections.every(proj => 
+                isFinite(proj.cashFlow) && isFinite(proj.equity)
+            )
+        );
+        
+        return TestFramework.expect(allProjectionsValid).toBe(true) &&
+               TestFramework.expect(cycleResults.length).toBe(4);
+    });
+
+    TestFramework.test('Advanced Integration - Stress Testing Economic Scenarios', function() {
+        const testScenarios = [
+            {
+                name: "High Inflation",
+                purchasePrice: 300000,
+                interestRate: 8.5,
+                rentGrowth: 0.06,
+                expenseGrowth: 0.08,
+                taxRate: 0.015
+            },
+            {
+                name: "Recession",
+                purchasePrice: 250000,
+                interestRate: 4.0,
+                rentGrowth: 0.01,
+                expenseGrowth: 0.05,
+                taxRate: 0.018
+            },
+            {
+                name: "Market Boom",
+                purchasePrice: 450000,
+                interestRate: 6.75,
+                rentGrowth: 0.08,
+                expenseGrowth: 0.04,
+                taxRate: 0.012
+            }
+        ];
+        
+        const stressTestResults = testScenarios.map(scenario => {
+            const downPayment = scenario.purchasePrice * 0.25;
+            const loanAmount = scenario.purchasePrice - downPayment;
+            const monthlyPayment = calculateMortgagePayment(loanAmount, scenario.interestRate, 30);
+            
+            const monthlyRent = scenario.purchasePrice * 0.008; // 0.8% rent ratio
+            const monthlyTaxes = (scenario.purchasePrice * scenario.taxRate) / 12;
+            const monthlyInsurance = scenario.purchasePrice * 0.0035 / 12;
+            const totalExpenses = monthlyTaxes + monthlyInsurance + monthlyPayment + 200; // +$200 other
+            
+            const monthlyCashFlow = monthlyRent - totalExpenses;
+            const annualCashFlow = monthlyCashFlow * 12;
+            const cashOnCashROI = (annualCashFlow / downPayment) * 100;
+            
+            // Calculate NOI and Cap Rate
+            const annualNOI = (monthlyRent * 12) - ((monthlyTaxes + monthlyInsurance + 200) * 12);
+            const capRate = (annualNOI / scenario.purchasePrice) * 100;
+            
+            return {
+                scenario: scenario.name,
+                monthlyCashFlow,
+                cashOnCashROI,
+                capRate,
+                viable: monthlyCashFlow > -500 // Allow some negative cash flow in stress test
+            };
+        });
+        
+        const allValid = stressTestResults.every(result =>
+            isFinite(result.monthlyCashFlow) &&
+            isFinite(result.cashOnCashROI) &&
+            isFinite(result.capRate)
+        );
+        
+        const viableCount = stressTestResults.filter(r => r.viable).length;
+        
+        return TestFramework.expect(allValid).toBe(true) &&
+               TestFramework.expect(viableCount).toBeGreaterThan(0);
+    });
+
+    TestFramework.test('Advanced Integration - Regional Market Comparison', function() {
+        const regionalMarkets = [
+            {
+                region: "California - Bay Area",
+                avgPrice: 800000,
+                avgRent: 4500,
+                propTaxRate: 0.0075,
+                insuranceRate: 0.003,
+                appreciation: 0.06
+            },
+            {
+                region: "Texas - Austin",
+                avgPrice: 450000,
+                avgRent: 2800,
+                propTaxRate: 0.018,
+                insuranceRate: 0.004,
+                appreciation: 0.05
+            },
+            {
+                region: "Florida - Miami",
+                avgPrice: 500000,
+                avgRent: 3200,
+                propTaxRate: 0.011,
+                insuranceRate: 0.008,
+                appreciation: 0.045
+            },
+            {
+                region: "Ohio - Columbus",
+                avgPrice: 250000,
+                avgRent: 1800,
+                propTaxRate: 0.016,
+                insuranceRate: 0.003,
+                appreciation: 0.03
+            }
+        ];
+        
+        const marketAnalysis = regionalMarkets.map(market => {
+            const downPayment = market.avgPrice * 0.25;
+            const loanAmount = market.avgPrice - downPayment;
+            const monthlyPayment = calculateMortgagePayment(loanAmount, 6.0, 30);
+            
+            const monthlyTaxes = (market.avgPrice * market.propTaxRate) / 12;
+            const monthlyInsurance = (market.avgPrice * market.insuranceRate) / 12;
+            const totalMonthlyExpenses = monthlyPayment + monthlyTaxes + monthlyInsurance + 150;
+            
+            const monthlyCashFlow = market.avgRent - totalMonthlyExpenses;
+            const annualCashFlow = monthlyCashFlow * 12;
+            const cashOnCashROI = (annualCashFlow / downPayment) * 100;
+            
+            // Cap rate calculation
+            const annualNOI = (market.avgRent * 12) - ((monthlyTaxes + monthlyInsurance + 150) * 12);
+            const capRate = (annualNOI / market.avgPrice) * 100;
+            
+            // GRM (Gross Rent Multiplier)
+            const grm = market.avgPrice / (market.avgRent * 12);
+            
+            return {
+                region: market.region,
+                monthlyCashFlow,
+                cashOnCashROI,
+                capRate,
+                grm,
+                priceToRentRatio: market.avgPrice / (market.avgRent * 12),
+                appreciation: market.appreciation
+            };
+        });
+        
+        // Find best and worst performing markets
+        const bestROI = Math.max(...marketAnalysis.map(m => m.cashOnCashROI));
+        const worstROI = Math.min(...marketAnalysis.map(m => m.cashOnCashROI));
+        const avgGRM = marketAnalysis.reduce((sum, m) => sum + m.grm, 0) / marketAnalysis.length;
+        
+        const allValid = marketAnalysis.every(market =>
+            isFinite(market.monthlyCashFlow) &&
+            isFinite(market.cashOnCashROI) &&
+            isFinite(market.capRate) &&
+            isFinite(market.grm)
+        );
+        
+        return TestFramework.expect(allValid).toBe(true) &&
+               TestFramework.expect(bestROI).toBeGreaterThan(worstROI) &&
+               TestFramework.expect(avgGRM).toBeGreaterThan(0);
+    });
+
+    TestFramework.test('Advanced Integration - Financing Strategy Comparison', function() {
+        const baseProperty = {
+            purchasePrice: 400000,
+            monthlyRent: 2800,
+            monthlyTaxes: 400,
+            monthlyInsurance: 150,
+            otherExpenses: 200
+        };
+        
+        const financingStrategies = [
+            {
+                name: "Conservative (25% down)",
+                downPaymentPercent: 0.25,
+                interestRate: 5.5,
+                loanTerm: 30
+            },
+            {
+                name: "Aggressive (10% down)",
+                downPaymentPercent: 0.10,
+                interestRate: 6.25,
+                loanTerm: 30
+            },
+            {
+                name: "Cash Purchase",
+                downPaymentPercent: 1.0,
+                interestRate: 0,
+                loanTerm: 0
+            },
+            {
+                name: "15-Year Loan",
+                downPaymentPercent: 0.20,
+                interestRate: 5.0,
+                loanTerm: 15
+            }
+        ];
+        
+        const strategyAnalysis = financingStrategies.map(strategy => {
+            const downPayment = baseProperty.purchasePrice * strategy.downPaymentPercent;
+            const loanAmount = baseProperty.purchasePrice - downPayment;
+            
+            let monthlyPayment = 0;
+            if (loanAmount > 0 && strategy.loanTerm > 0) {
+                monthlyPayment = calculateMortgagePayment(loanAmount, strategy.interestRate, strategy.loanTerm);
+            }
+            
+            const totalMonthlyExpenses = baseProperty.monthlyTaxes + 
+                                       baseProperty.monthlyInsurance + 
+                                       baseProperty.otherExpenses + 
+                                       monthlyPayment;
+            
+            const monthlyCashFlow = baseProperty.monthlyRent - totalMonthlyExpenses;
+            const annualCashFlow = monthlyCashFlow * 12;
+            const cashOnCashROI = downPayment > 0 ? (annualCashFlow / downPayment) * 100 : 0;
+            
+            // Calculate total return including principal paydown
+            let annualPrincipalPaydown = 0;
+            if (loanAmount > 0 && strategy.loanTerm > 0) {
+                const totalPayments = monthlyPayment * 12;
+                const annualInterest = loanAmount * (strategy.interestRate / 100);
+                annualPrincipalPaydown = totalPayments - annualInterest;
+            }
+            
+            const totalAnnualReturn = annualCashFlow + annualPrincipalPaydown;
+            const totalROI = downPayment > 0 ? (totalAnnualReturn / downPayment) * 100 : 0;
+            
+            return {
+                strategy: strategy.name,
+                downPayment,
+                monthlyPayment,
+                monthlyCashFlow,
+                cashOnCashROI,
+                totalROI,
+                leverageRatio: loanAmount / baseProperty.purchasePrice
+            };
+        });
+        
+        const allValid = strategyAnalysis.every(analysis =>
+            isFinite(analysis.monthlyCashFlow) &&
+            isFinite(analysis.cashOnCashROI) &&
+            isFinite(analysis.totalROI)
+        );
+        
+        // Verify strategies produce different results
+        const roiValues = strategyAnalysis.map(a => a.cashOnCashROI);
+        const hasVariation = Math.max(...roiValues) - Math.min(...roiValues) > 1;
+        
+        return TestFramework.expect(allValid).toBe(true) &&
+               TestFramework.expect(hasVariation).toBe(true) &&
+               TestFramework.expect(strategyAnalysis.length).toBe(4);
+    });
 });
 
 // Log test suite loaded

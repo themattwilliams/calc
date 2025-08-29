@@ -397,6 +397,214 @@ TestFramework.describe('Performance', function() {
         
         return TestFramework.expect(allPassed).toBeTruthy();
     });
+
+    // ========================================
+    // ADVANCED PERFORMANCE & STRESS TESTS
+    // ========================================
+
+    TestFramework.test('STRESS: Memory Usage During Large Calculations', function() {
+        const initialMemory = performance.memory ? performance.memory.usedJSHeapSize : 0;
+        
+        // Perform many large calculations
+        for (let i = 0; i < 1000; i++) {
+            const loanAmount = 1000000 + (i * 1000);
+            const payment = calculateMortgagePayment(loanAmount, 5.5, 30);
+            const roi = (payment * 12 / 200000) * 100;
+            
+            // Force some garbage collection opportunity
+            if (i % 100 === 0 && typeof global !== 'undefined' && global.gc) {
+                global.gc();
+            }
+        }
+        
+        const finalMemory = performance.memory ? performance.memory.usedJSHeapSize : 0;
+        const memoryIncrease = finalMemory - initialMemory;
+        
+        // Memory increase should be reasonable (less than 50MB)
+        const memoryIncreaseReasonable = memoryIncrease < 50 * 1024 * 1024;
+        
+        return memoryIncreaseReasonable || !performance.memory; // Pass if memory API not available
+    });
+
+    TestFramework.test('STRESS: Concurrent Calculation Stress Test', function() {
+        const startTime = performance.now();
+        const calculations = [];
+        
+        // Simulate multiple concurrent calculations
+        for (let i = 0; i < 50; i++) {
+            const scenario = {
+                purchasePrice: 200000 + (i * 10000),
+                downPayment: 40000 + (i * 2000),
+                interestRate: 3.5 + (i * 0.1),
+                monthlyRent: 1800 + (i * 50)
+            };
+            
+            calculations.push({
+                loanAmount: scenario.purchasePrice - scenario.downPayment,
+                monthlyPayment: calculateMortgagePayment(
+                    scenario.purchasePrice - scenario.downPayment,
+                    scenario.interestRate,
+                    30
+                ),
+                cashFlow: scenario.monthlyRent - 800 // Simplified expenses
+            });
+        }
+        
+        const endTime = performance.now();
+        const duration = endTime - startTime;
+        
+        // All calculations should be valid
+        const allValid = calculations.every(calc => 
+            isFinite(calc.monthlyPayment) && 
+            isFinite(calc.cashFlow) &&
+            calc.monthlyPayment > 0
+        );
+        
+        // Should complete 50 scenarios in under 50ms
+        return TestFramework.expect(allValid).toBe(true) &&
+               TestFramework.expect(duration).toBeLessThan(50);
+    });
+
+    TestFramework.test('STRESS: Rapid Input Change Simulation', function() {
+        const startTime = performance.now();
+        let calculationCount = 0;
+        
+        // Simulate rapid user input changes
+        for (let price = 100000; price <= 500000; price += 5000) {
+            for (let rate = 3.0; rate <= 8.0; rate += 0.5) {
+                const payment = calculateMortgagePayment(price * 0.8, rate, 30);
+                if (isFinite(payment)) calculationCount++;
+            }
+        }
+        
+        const endTime = performance.now();
+        const duration = endTime - startTime;
+        const calculationsPerMs = calculationCount / duration;
+        
+        // Should handle at least 1 calculation per millisecond
+        return TestFramework.expect(calculationsPerMs).toBeGreaterThan(1.0);
+    });
+
+    TestFramework.test('STRESS: Large Dataset Projections', function() {
+        const startTime = performance.now();
+        
+        // Generate projections for multiple properties
+        const properties = [];
+        for (let i = 0; i < 20; i++) {
+            properties.push({
+                monthlyIncome: 2000 + (i * 100),
+                monthlyExpenses: 1500 + (i * 80),
+                incomeGrowth: 0.02 + (i * 0.001),
+                expenseGrowth: 0.015 + (i * 0.001),
+                valueGrowth: 0.03 + (i * 0.002),
+                initialValue: 250000 + (i * 25000)
+            });
+        }
+        
+        // Generate 30-year projections for all properties
+        const allProjections = properties.map(prop => 
+            generateLongTermProjections(
+                prop.monthlyIncome,
+                prop.monthlyExpenses,
+                prop.incomeGrowth,
+                prop.expenseGrowth,
+                prop.valueGrowth,
+                prop.initialValue
+            )
+        );
+        
+        const endTime = performance.now();
+        const duration = endTime - startTime;
+        
+        // Verify all projections generated correctly
+        const allValid = allProjections.every(proj => 
+            proj && proj.length === 30 && 
+            proj.every(year => isFinite(year.cashFlow))
+        );
+        
+        // Should complete 20 full projections in under 200ms
+        return TestFramework.expect(allValid).toBe(true) &&
+               TestFramework.expect(duration).toBeLessThan(200);
+    });
+
+    TestFramework.test('STRESS: Browser Resource Optimization', function() {
+        const startTime = performance.now();
+        
+        // Test multiple calculation types in sequence
+        const testSequence = [
+            () => calculateMortgagePayment(300000, 6.5, 30),
+            () => calculateCashOnCashROI(500, 60000),
+            () => calculateNOI(30000, 18000),
+            () => calculateCapRate(12000, 300000),
+            () => calculateGrossRentMultiplier(300000, 2500),
+            () => calculateDebtCoverageRatio(12000, 1800)
+        ];
+        
+        // Add projections if function available
+        if (typeof generateLongTermProjections === 'function') {
+            testSequence.push(() => generateLongTermProjections(2500, 1800, 0.03, 0.02, 0.04, 300000));
+        }
+        
+        // Run sequence multiple times
+        for (let cycle = 0; cycle < 10; cycle++) {
+            testSequence.forEach(testFn => {
+                try {
+                    testFn();
+                } catch (error) {
+                    // Skip if function not available
+                }
+            });
+        }
+        
+        const endTime = performance.now();
+        const duration = endTime - startTime;
+        
+        // Should complete all function calls quickly
+        return TestFramework.expect(duration).toBeLessThan(100);
+    });
+
+    TestFramework.test('STRESS: Precision Maintenance Under Load', function() {
+        const referenceResults = [];
+        
+        // Calculate reference results
+        for (let i = 0; i < 10; i++) {
+            const principal = 100000 + (i * 50000);
+            const rate = 3.5 + (i * 0.5);
+            referenceResults.push(calculateMortgagePayment(principal, rate, 30));
+        }
+        
+        // Perform the same calculations under load
+        const startTime = performance.now();
+        let allMaintainPrecision = true;
+        
+        for (let load = 0; load < 100; load++) {
+            // Add computational load
+            for (let noise = 0; noise < 50; noise++) {
+                Math.sqrt(noise * 12345.6789);
+            }
+            
+            // Re-calculate and compare precision
+            for (let i = 0; i < referenceResults.length; i++) {
+                const principal = 100000 + (i * 50000);
+                const rate = 3.5 + (i * 0.5);
+                const result = calculateMortgagePayment(principal, rate, 30);
+                
+                // Check if precision is maintained (within 0.001)
+                if (Math.abs(result - referenceResults[i]) > 0.001) {
+                    allMaintainPrecision = false;
+                    break;
+                }
+            }
+            
+            if (!allMaintainPrecision) break;
+        }
+        
+        const endTime = performance.now();
+        const duration = endTime - startTime;
+        
+        return TestFramework.expect(allMaintainPrecision).toBe(true) &&
+               TestFramework.expect(duration).toBeLessThan(500);
+    });
 });
 
 // Log test suite loaded
