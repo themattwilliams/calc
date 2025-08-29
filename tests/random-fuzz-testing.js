@@ -571,4 +571,342 @@ TestFramework.suite('Random Fuzz Testing', function() {
         
         return allPassed;
     });
+    
+    // ========================================
+    // EXTREME VALUE TESTING
+    // ========================================
+    
+    TestFramework.test('Extreme Values - Maximum JavaScript Numbers', function() {
+        // Test with maximum safe integer values
+        const extremeValues = [
+            Number.MAX_SAFE_INTEGER,
+            Number.MAX_VALUE,
+            Number.MIN_SAFE_INTEGER,
+            Number.MIN_VALUE,
+            Math.pow(10, 15), // Very large but realistic property value
+            Math.pow(10, -10)  // Very small tax rate
+        ];
+        
+        let extremeValuesHandled = true;
+        
+        extremeValues.forEach(value => {
+            try {
+                // Test calculations with extreme values
+                const inputs = {
+                    purchasePrice: Math.min(value, 10000000), // Cap at $10M for realism
+                    downPayment: Math.min(value * 0.2, 2000000),
+                    loanInterestRate: Math.min(Math.abs(value % 50), 30), // Cap at 30%
+                    monthlyRent: Math.min(value / 100, 50000) // Cap at $50k/month
+                };
+                
+                const results = runBasicCalculations(inputs);
+                
+                // Results should be finite numbers
+                Object.values(results).forEach(result => {
+                    if (!isFinite(result) && result !== 0) {
+                        extremeValuesHandled = false;
+                    }
+                });
+                
+            } catch (error) {
+                extremeValuesHandled = false;
+            }
+        });
+        
+        return extremeValuesHandled;
+    });
+    
+    TestFramework.test('Extreme Values - Precision Boundaries', function() {
+        // Test values at precision boundaries
+        const precisionTests = [
+            { purchasePrice: 999999.99, downPayment: 199999.998, rate: 4.999 },
+            { purchasePrice: 100000.01, downPayment: 20000.002, rate: 5.001 },
+            { purchasePrice: 123456.789, downPayment: 24691.3578, rate: 3.14159 },
+            { purchasePrice: 300000.333, downPayment: 60000.0667, rate: 2.71828 }
+        ];
+        
+        let precisionHandled = true;
+        
+        precisionTests.forEach(test => {
+            try {
+                const results = runBasicCalculations({
+                    purchasePrice: test.purchasePrice,
+                    downPayment: test.downPayment,
+                    loanInterestRate: test.rate,
+                    monthlyRent: 2500
+                });
+                
+                // Check that results maintain reasonable precision
+                const cashFlow = results.monthlyCashFlow;
+                const roi = results.cashOnCashROI;
+                
+                if (!isFinite(cashFlow) || !isFinite(roi)) {
+                    precisionHandled = false;
+                }
+                
+                // Results should be within reasonable bounds
+                if (Math.abs(cashFlow) > 1000000 || Math.abs(roi) > 10000) {
+                    precisionHandled = false;
+                }
+                
+            } catch (error) {
+                precisionHandled = false;
+            }
+        });
+        
+        return precisionHandled;
+    });
+    
+    // ========================================
+    // REALISTIC MARKET SCENARIO TESTING
+    // ========================================
+    
+    TestFramework.test('Market Scenarios - International Property Markets', function() {
+        // Test scenarios from different international markets
+        const internationalScenarios = [
+            { name: 'Tokyo High-Rise', price: 800000, rent: 4000, taxes: 800, insurance: 200 },
+            { name: 'London Flat', price: 650000, rent: 3500, taxes: 600, insurance: 150 },
+            { name: 'Vancouver Condo', price: 750000, rent: 2800, taxes: 900, insurance: 180 },
+            { name: 'Sydney Apartment', price: 900000, rent: 3200, taxes: 750, insurance: 220 },
+            { name: 'Berlin Property', price: 450000, rent: 2200, taxes: 400, insurance: 120 },
+            { name: 'Singapore Unit', price: 1200000, rent: 4500, taxes: 600, insurance: 300 }
+        ];
+        
+        let allScenariosValid = true;
+        
+        internationalScenarios.forEach(scenario => {
+            try {
+                const inputs = {
+                    purchasePrice: scenario.price,
+                    downPayment: scenario.price * 0.25, // 25% down
+                    loanInterestRate: 3.5 + (Math.random() * 3), // 3.5-6.5%
+                    monthlyRent: scenario.rent,
+                    monthlyPropertyTaxes: scenario.taxes,
+                    monthlyInsurance: scenario.insurance
+                };
+                
+                const results = runBasicCalculations(inputs);
+                
+                // Validate results are reasonable for international markets
+                const totalExpenses = scenario.taxes + scenario.insurance + (inputs.purchasePrice * 0.75 * 0.035 / 12);
+                const expectedCashFlow = scenario.rent - totalExpenses - 200; // Rough estimate
+                
+                // Cash flow should be within reasonable range
+                const cashFlowReasonable = Math.abs(results.monthlyCashFlow - expectedCashFlow) < 2000;
+                
+                if (!cashFlowReasonable) {
+                    allScenariosValid = false;
+                }
+                
+            } catch (error) {
+                allScenariosValid = false;
+            }
+        });
+        
+        return allScenariosValid;
+    });
+    
+    TestFramework.test('Market Scenarios - Economic Stress Testing', function() {
+        // Test scenarios under various economic conditions
+        const stressScenarios = [
+            { name: 'High Interest Rate Environment', baseRate: 8.5, inflation: 0.06 },
+            { name: 'Deflationary Period', baseRate: 1.0, inflation: -0.02 },
+            { name: 'Market Crash Scenario', baseRate: 4.0, inflation: 0.01, priceAdjustment: 0.7 },
+            { name: 'Hyperinflation Scenario', baseRate: 15.0, inflation: 0.20 },
+            { name: 'Zero Interest Rate', baseRate: 0.1, inflation: 0.0 }
+        ];
+        
+        let allStressTestsPassed = true;
+        
+        stressScenarios.forEach(scenario => {
+            try {
+                const basePrice = 400000;
+                const adjustedPrice = basePrice * (scenario.priceAdjustment || 1.0);
+                
+                const inputs = {
+                    purchasePrice: adjustedPrice,
+                    downPayment: adjustedPrice * 0.2,
+                    loanInterestRate: scenario.baseRate,
+                    monthlyRent: 2500 * (1 + scenario.inflation),
+                    annualGrowthRate: scenario.inflation * 100
+                };
+                
+                const results = runBasicCalculations(inputs);
+                
+                // Under stress conditions, results should still be calculable
+                const resultsValid = Object.values(results).every(result => 
+                    isFinite(result) || result === 0
+                );
+                
+                // ROI should be realistic even under stress
+                const roiReasonable = Math.abs(results.cashOnCashROI) < 500; // Within 500%
+                
+                if (!resultsValid || !roiReasonable) {
+                    allStressTestsPassed = false;
+                }
+                
+            } catch (error) {
+                allStressTestsPassed = false;
+            }
+        });
+        
+        return allStressTestsPassed;
+    });
+    
+    // ========================================
+    // UNUSUAL INPUT COMBINATIONS
+    // ========================================
+    
+    TestFramework.test('Unusual Inputs - Zero and Negative Combinations', function() {
+        // Test unusual but potentially valid input combinations
+        const unusualCombinations = [
+            { price: 100000, down: 0, rate: 5.0, rent: 0 }, // No down payment, no rent
+            { price: 200000, down: 200000, rate: 0.1, rent: 1000 }, // 100% cash purchase
+            { price: 300000, down: 60000, rate: 10.0, rent: 4000 }, // High rate, high rent
+            { price: 150000, down: 30000, rate: 2.0, rent: 500 }, // Low rate, low rent
+            { price: 500000, down: 100000, rate: 7.5, rent: 8000 } // High rent scenario
+        ];
+        
+        let unusualInputsHandled = true;
+        
+        unusualCombinations.forEach(combo => {
+            try {
+                const results = runBasicCalculations({
+                    purchasePrice: combo.price,
+                    downPayment: combo.down,
+                    loanInterestRate: combo.rate,
+                    monthlyRent: combo.rent
+                });
+                
+                // Should produce valid results even with unusual inputs
+                const hasValidResults = Object.values(results).every(result => 
+                    (isFinite(result) && !isNaN(result)) || result === 0
+                );
+                
+                if (!hasValidResults) {
+                    unusualInputsHandled = false;
+                }
+                
+            } catch (error) {
+                unusualInputsHandled = false;
+            }
+        });
+        
+        return unusualInputsHandled;
+    });
+    
+    TestFramework.test('Unusual Inputs - Property Type Variations', function() {
+        // Test different property types with varying characteristics
+        const propertyTypes = [
+            { name: 'Micro Studio', price: 150000, rent: 1200, expenses: 300 },
+            { name: 'Luxury Penthouse', price: 5000000, rent: 25000, expenses: 5000 },
+            { name: 'Commercial Building', price: 2000000, rent: 15000, expenses: 8000 },
+            { name: 'Mobile Home', price: 50000, rent: 800, expenses: 200 },
+            { name: 'Vacation Rental', price: 600000, rent: 4000, expenses: 1500 },
+            { name: 'Student Housing', price: 300000, rent: 2400, expenses: 600 }
+        ];
+        
+        let allPropertyTypesHandled = true;
+        
+        propertyTypes.forEach(property => {
+            try {
+                const downPaymentPercent = property.price > 1000000 ? 0.25 : 0.20;
+                
+                const inputs = {
+                    purchasePrice: property.price,
+                    downPayment: property.price * downPaymentPercent,
+                    loanInterestRate: 4.5,
+                    monthlyRent: property.rent,
+                    otherMonthlyExpenses: property.expenses
+                };
+                
+                const results = runBasicCalculations(inputs);
+                
+                // Results should be proportional to property type
+                const roiReasonable = results.cashOnCashROI > -100 && results.cashOnCashROI < 100;
+                const cashFlowReasonable = Math.abs(results.monthlyCashFlow) < property.rent * 2;
+                
+                if (!roiReasonable || !cashFlowReasonable) {
+                    allPropertyTypesHandled = false;
+                }
+                
+            } catch (error) {
+                allPropertyTypesHandled = false;
+            }
+        });
+        
+        return allPropertyTypesHandled;
+    });
+    
+    // ========================================
+    // TEMPORAL EDGE CASES
+    // ========================================
+    
+    TestFramework.test('Temporal Edge Cases - Loan Term Variations', function() {
+        // Test various loan terms and their impact
+        const loanTerms = [10, 15, 20, 25, 30, 40]; // years
+        const baseInputs = {
+            purchasePrice: 350000,
+            downPayment: 70000,
+            loanInterestRate: 4.0,
+            monthlyRent: 2800
+        };
+        
+        let allTermsHandled = true;
+        
+        loanTerms.forEach(term => {
+            try {
+                const inputs = { ...baseInputs, amortizedOver: term };
+                const results = runBasicCalculations(inputs);
+                
+                // Longer terms should generally result in lower monthly payments
+                // and different cash flow patterns
+                const hasValidPayment = results.monthlyMortgagePayment > 0;
+                const hasValidCashFlow = isFinite(results.monthlyCashFlow);
+                
+                if (!hasValidPayment || !hasValidCashFlow) {
+                    allTermsHandled = false;
+                }
+                
+            } catch (error) {
+                allTermsHandled = false;
+            }
+        });
+        
+        return allTermsHandled;
+    });
+    
+    TestFramework.test('Temporal Edge Cases - Growth Rate Extremes', function() {
+        // Test extreme growth rate scenarios
+        const growthRates = [-5.0, -2.5, 0.0, 2.5, 5.0, 10.0, 15.0]; // Percentages
+        const baseInputs = {
+            purchasePrice: 300000,
+            downPayment: 60000,
+            loanInterestRate: 4.5,
+            monthlyRent: 2400
+        };
+        
+        let allGrowthRatesHandled = true;
+        
+        growthRates.forEach(rate => {
+            try {
+                const inputs = { ...baseInputs, annualGrowthRate: rate };
+                const results = runBasicCalculations(inputs);
+                
+                // Should handle both positive and negative growth
+                const resultsValid = Object.values(results).every(result => 
+                    isFinite(result) || result === 0
+                );
+                
+                if (!resultsValid) {
+                    allGrowthRatesHandled = false;
+                }
+                
+            } catch (error) {
+                allGrowthRatesHandled = false;
+            }
+        });
+        
+        return allGrowthRatesHandled;
+    });
 });

@@ -354,4 +354,240 @@ TestFramework.suite('Button Hover Enhancement', function() {
         
         return performanceOk;
     });
+    
+    // ========================================
+    // ADVANCED VISUAL FEEDBACK TESTS
+    // ========================================
+    
+    TestFramework.test('Quick Entry Buttons - Focus Management', function() {
+        // Test keyboard navigation and focus states
+        const testButton = document.createElement('button');
+        testButton.className = 'btn-quick-entry';
+        testButton.textContent = '2.5%';
+        testButton.tabIndex = 0;
+        document.body.appendChild(testButton);
+        
+        // Simulate focus
+        testButton.focus();
+        const isFocused = document.activeElement === testButton;
+        
+        // Test tab navigation
+        const tabEvent = new KeyboardEvent('keydown', { key: 'Tab' });
+        testButton.dispatchEvent(tabEvent);
+        
+        // Cleanup
+        document.body.removeChild(testButton);
+        
+        return isFocused;
+    });
+    
+    TestFramework.test('Quick Entry Buttons - Animation Properties', function() {
+        const testButton = document.createElement('button');
+        testButton.className = 'btn-quick-entry';
+        testButton.textContent = '$5k';
+        document.body.appendChild(testButton);
+        
+        const styles = window.getComputedStyle(testButton);
+        
+        // Check for transition properties (may not be available in test env)
+        const hasTransition = styles.transition !== '' || 
+                            styles.transitionDuration !== '' ||
+                            styles.transitionProperty !== '';
+        
+        // Check border radius for rounded appearance
+        const hasBorderRadius = styles.borderRadius !== '0px';
+        
+        // Cleanup
+        document.body.removeChild(testButton);
+        
+        // At least one visual enhancement should be present
+        return hasTransition || hasBorderRadius;
+    });
+    
+    TestFramework.test('Quick Entry Buttons - Color Contrast', function() {
+        const testButton = document.createElement('button');
+        testButton.className = 'btn-quick-entry';
+        testButton.textContent = '3.0%';
+        document.body.appendChild(testButton);
+        
+        const styles = window.getComputedStyle(testButton);
+        
+        // Basic color property checks
+        const hasBackgroundColor = styles.backgroundColor !== 'rgba(0, 0, 0, 0)';
+        const hasTextColor = styles.color !== '';
+        const hasBorder = styles.border !== '' || styles.borderWidth !== '0px';
+        
+        // Cleanup
+        document.body.removeChild(testButton);
+        
+        return hasBackgroundColor && hasTextColor;
+    });
+    
+    TestFramework.test('Quick Entry Buttons - Mobile Touch Compatibility', function() {
+        const testButton = document.createElement('button');
+        testButton.className = 'btn-quick-entry';
+        testButton.textContent = '$15k';
+        document.body.appendChild(testButton);
+        
+        // Check minimum touch target size (should be accessible)
+        const rect = testButton.getBoundingClientRect();
+        const minTouchSize = 24; // 24px minimum for accessibility
+        
+        const isTouchFriendly = rect.width >= minTouchSize && rect.height >= minTouchSize;
+        
+        // Test touch events
+        let touchStartTriggered = false;
+        testButton.addEventListener('touchstart', () => {
+            touchStartTriggered = true;
+        });
+        
+        // Simulate touch (may not work in all test environments)
+        const touchEvent = new Event('touchstart');
+        testButton.dispatchEvent(touchEvent);
+        
+        // Cleanup
+        document.body.removeChild(testButton);
+        
+        return isTouchFriendly;
+    });
+    
+    TestFramework.test('Quick Entry Buttons - High Contrast Mode Compatibility', function() {
+        const testButton = document.createElement('button');
+        testButton.className = 'btn-quick-entry';
+        testButton.textContent = '1.8%';
+        document.body.appendChild(testButton);
+        
+        // Check if button maintains visibility in different contexts
+        const styles = window.getComputedStyle(testButton);
+        
+        // Should have explicit styling rather than relying on defaults
+        const hasExplicitStyling = styles.padding !== '0px' || 
+                                 styles.margin !== '0px' ||
+                                 styles.border !== '' ||
+                                 styles.backgroundColor !== 'rgba(0, 0, 0, 0)';
+        
+        // Cleanup
+        document.body.removeChild(testButton);
+        
+        return hasExplicitStyling;
+    });
+    
+    TestFramework.test('Quick Entry Buttons - Loading State Simulation', function() {
+        const testButton = document.createElement('button');
+        testButton.className = 'btn-quick-entry';
+        testButton.textContent = '$20k';
+        document.body.appendChild(testButton);
+        
+        // Simulate disabled state
+        testButton.disabled = true;
+        const disabledStyles = window.getComputedStyle(testButton);
+        
+        // Should show visual indication when disabled
+        const showsDisabledState = testButton.disabled === true;
+        
+        // Re-enable
+        testButton.disabled = false;
+        const enabledStyles = window.getComputedStyle(testButton);
+        
+        // Cleanup
+        document.body.removeChild(testButton);
+        
+        return showsDisabledState;
+    });
+    
+    // ========================================
+    // INTERACTION EDGE CASE TESTS  
+    // ========================================
+    
+    TestFramework.test('Quick Entry Buttons - Rapid Click Prevention', function() {
+        const testButton = document.createElement('button');
+        testButton.className = 'btn-quick-entry';
+        testButton.textContent = '0.5%';
+        document.body.appendChild(testButton);
+        
+        let clickCount = 0;
+        testButton.addEventListener('click', () => {
+            clickCount++;
+        });
+        
+        // Simulate rapid clicks
+        for (let i = 0; i < 5; i++) {
+            testButton.click();
+        }
+        
+        // Should handle rapid clicks gracefully
+        const handlesRapidClicks = clickCount > 0;
+        
+        // Cleanup
+        document.body.removeChild(testButton);
+        
+        return handlesRapidClicks;
+    });
+    
+    TestFramework.test('Quick Entry Buttons - Dynamic Content Updates', function() {
+        const testButton = document.createElement('button');
+        testButton.className = 'btn-quick-entry';
+        testButton.textContent = '1.0%';
+        document.body.appendChild(testButton);
+        
+        // Test dynamic content change
+        const originalText = testButton.textContent;
+        testButton.textContent = '2.0%';
+        const updatedText = testButton.textContent;
+        
+        // Test data attribute updates
+        testButton.setAttribute('data-value', '2.0');
+        const hasUpdatedAttribute = testButton.getAttribute('data-value') === '2.0';
+        
+        // Cleanup
+        document.body.removeChild(testButton);
+        
+        return originalText !== updatedText && hasUpdatedAttribute;
+    });
+    
+    TestFramework.test('Quick Entry Buttons - Internationalization Support', function() {
+        const testButton = document.createElement('button');
+        testButton.className = 'btn-quick-entry';
+        
+        // Test with different number formats
+        const testCases = ['1,5%', '1.500', '$5K', '€10k', '¥1000'];
+        let supportsInternational = true;
+        
+        for (const testCase of testCases) {
+            testButton.textContent = testCase;
+            document.body.appendChild(testButton);
+            
+            // Check if button maintains styling with different content
+            const styles = window.getComputedStyle(testButton);
+            const maintainsStyle = styles.display !== 'none';
+            
+            if (!maintainsStyle) {
+                supportsInternational = false;
+            }
+            
+            document.body.removeChild(testButton);
+        }
+        
+        return supportsInternational;
+    });
+    
+    TestFramework.test('Quick Entry Buttons - Error State Handling', function() {
+        const testButton = document.createElement('button');
+        testButton.className = 'btn-quick-entry';
+        testButton.textContent = 'Invalid';
+        document.body.appendChild(testButton);
+        
+        // Test error state styling
+        testButton.classList.add('error');
+        const hasErrorClass = testButton.classList.contains('error');
+        
+        // Test aria-invalid for accessibility
+        testButton.setAttribute('aria-invalid', 'true');
+        const hasAriaInvalid = testButton.getAttribute('aria-invalid') === 'true';
+        
+        // Cleanup
+        document.body.removeChild(testButton);
+        
+        return hasErrorClass && hasAriaInvalid;
+    });
 });

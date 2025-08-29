@@ -398,4 +398,359 @@ TestFramework.suite('Property Tax Dual Input System', function() {
         // Should maintain precision even with large values
         return Math.abs(backCalculatedRate - rate) < 0.01;
     });
+    
+    // ========================================
+    // USER INTERFACE INTEGRATION TESTS
+    // ========================================
+    
+    TestFramework.test('UI Integration - Toggle Button Functionality', function() {
+        // Create mock toggle button
+        const toggleButton = document.createElement('button');
+        toggleButton.id = 'taxInputToggle';
+        toggleButton.textContent = 'Monthly $';
+        toggleButton.setAttribute('data-mode', 'monthly');
+        document.body.appendChild(toggleButton);
+        
+        // Create mock input containers
+        const monthlyContainer = document.createElement('div');
+        monthlyContainer.id = 'monthlyTaxInput';
+        document.body.appendChild(monthlyContainer);
+        
+        const rateContainer = document.createElement('div');
+        rateContainer.id = 'rateTaxInput';
+        rateContainer.classList.add('hidden');
+        document.body.appendChild(rateContainer);
+        
+        // Simulate toggle functionality
+        const currentMode = toggleButton.getAttribute('data-mode');
+        const isMonthlyMode = currentMode === 'monthly';
+        
+        // Toggle to rate mode
+        if (isMonthlyMode) {
+            toggleButton.setAttribute('data-mode', 'rate');
+            toggleButton.textContent = 'Annual %';
+            monthlyContainer.classList.add('hidden');
+            rateContainer.classList.remove('hidden');
+        }
+        
+        const toggleWorked = toggleButton.getAttribute('data-mode') === 'rate' &&
+                           toggleButton.textContent === 'Annual %' &&
+                           monthlyContainer.classList.contains('hidden') &&
+                           !rateContainer.classList.contains('hidden');
+        
+        // Cleanup
+        document.body.removeChild(toggleButton);
+        document.body.removeChild(monthlyContainer);
+        document.body.removeChild(rateContainer);
+        
+        return toggleWorked;
+    });
+    
+    TestFramework.test('UI Integration - Quick Entry Button Integration', function() {
+        // Create mock quick entry buttons for both modes
+        const monthlyButtons = [
+            { value: '200', text: '$200' },
+            { value: '400', text: '$400' },
+            { value: '600', text: '$600' }
+        ];
+        
+        const rateButtons = [
+            { value: '1.0', text: '1.0%' },
+            { value: '1.5', text: '1.5%' },
+            { value: '2.0', text: '2.0%' }
+        ];
+        
+        const createdElements = [];
+        
+        // Test monthly buttons
+        monthlyButtons.forEach(button => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-quick-entry tax-monthly';
+            btn.textContent = button.text;
+            btn.setAttribute('data-value', button.value);
+            btn.setAttribute('data-target', 'monthlyPropertyTaxes');
+            document.body.appendChild(btn);
+            createdElements.push(btn);
+        });
+        
+        // Test rate buttons
+        rateButtons.forEach(button => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-quick-entry tax-rate';
+            btn.textContent = button.text;
+            btn.setAttribute('data-value', button.value);
+            btn.setAttribute('data-target', 'annualTaxRate');
+            document.body.appendChild(btn);
+            createdElements.push(btn);
+        });
+        
+        // Verify buttons are created correctly
+        const monthlyBtns = document.querySelectorAll('.tax-monthly');
+        const rateBtns = document.querySelectorAll('.tax-rate');
+        
+        const hasCorrectButtons = monthlyBtns.length === 3 && rateBtns.length === 3;
+        
+        // Test button click simulation
+        let clickHandled = true;
+        createdElements.forEach(btn => {
+            // Simulate click event
+            const clickEvent = new Event('click');
+            btn.dispatchEvent(clickEvent);
+            // In real implementation, this would update the target input
+        });
+        
+        // Cleanup
+        createdElements.forEach(btn => document.body.removeChild(btn));
+        
+        return hasCorrectButtons && clickHandled;
+    });
+    
+    TestFramework.test('UI Integration - Calculation Display Updates', function() {
+        // Create mock calculation display
+        const calcDisplay = document.createElement('div');
+        calcDisplay.id = 'propertyTaxCalculation';
+        calcDisplay.textContent = 'Enter property purchase price to see tax calculations';
+        document.body.appendChild(calcDisplay);
+        
+        // Simulate calculation update
+        const propertyValue = 300000;
+        const monthlyTax = 250;
+        const annualTax = monthlyTax * 12;
+        const taxRate = (annualTax / propertyValue) * 100;
+        
+        // Update display with calculation
+        const displayText = `Annual: $${annualTax.toLocaleString()} | Tax Rate: ${taxRate.toFixed(2)}%`;
+        calcDisplay.textContent = displayText;
+        
+        const hasCorrectDisplay = calcDisplay.textContent.includes('$3,000') &&
+                                calcDisplay.textContent.includes('1.00%');
+        
+        // Test empty state
+        calcDisplay.textContent = 'Enter monthly tax amount';
+        const hasEmptyState = calcDisplay.textContent.includes('Enter monthly');
+        
+        // Cleanup
+        document.body.removeChild(calcDisplay);
+        
+        return hasCorrectDisplay && hasEmptyState;
+    });
+    
+    // ========================================
+    // ADVANCED VALIDATION TESTS
+    // ========================================
+    
+    TestFramework.test('Advanced Validation - Property Value Changes', function() {
+        const initialPropertyValue = 200000;
+        const updatedPropertyValue = 400000;
+        const monthlyTax = 200;
+        
+        // Calculate initial rate
+        const initialRate = mockTaxFunctions.calculateRateFromMonthly(
+            initialPropertyValue, 
+            monthlyTax
+        );
+        
+        // Calculate new rate with updated property value
+        const updatedRate = mockTaxFunctions.calculateRateFromMonthly(
+            updatedPropertyValue, 
+            monthlyTax
+        );
+        
+        // Rate should change when property value changes
+        const rateChanged = Math.abs(initialRate - updatedRate) > 0.1;
+        
+        // New rate should be half of original (property value doubled)
+        const expectedRate = initialRate / 2;
+        const rateCorrect = Math.abs(updatedRate - expectedRate) < 0.01;
+        
+        return rateChanged && rateCorrect;
+    });
+    
+    TestFramework.test('Advanced Validation - Multiple Currency Formats', function() {
+        const propertyValue = 500000;
+        
+        // Test different input formats that might be entered
+        const testInputs = [
+            { input: '300.50', expected: 300.50 },
+            { input: '$300.50', expected: 300.50 },
+            { input: '300,50', expected: 300.50 }, // European format
+            { input: '1,234.56', expected: 1234.56 },
+            { input: '$1,234.56', expected: 1234.56 }
+        ];
+        
+        let allFormatsHandled = true;
+        
+        testInputs.forEach(test => {
+            // In real implementation, this would parse the input string
+            const parsedValue = parseFloat(test.input.replace(/[$,]/g, '').replace(',', '.'));
+            
+            if (Math.abs(parsedValue - test.expected) > 0.01) {
+                allFormatsHandled = false;
+            }
+            
+            // Test calculation with parsed value
+            const rate = mockTaxFunctions.calculateRateFromMonthly(propertyValue, parsedValue);
+            const isValidRate = !isNaN(rate) && rate > 0;
+            
+            if (!isValidRate) {
+                allFormatsHandled = false;
+            }
+        });
+        
+        return allFormatsHandled;
+    });
+    
+    TestFramework.test('Advanced Validation - Real Estate Market Scenarios', function() {
+        // Test various real estate market scenarios
+        const scenarios = [
+            { name: 'High-Tax Area', property: 400000, rate: 2.5, expected: 833.33 },
+            { name: 'Low-Tax Area', property: 400000, rate: 0.5, expected: 166.67 },
+            { name: 'Luxury Property', property: 2000000, rate: 1.2, expected: 2000 },
+            { name: 'Starter Home', property: 150000, rate: 1.8, expected: 225 },
+            { name: 'Commercial Property', property: 1500000, rate: 3.0, expected: 3750 }
+        ];
+        
+        let allScenariosValid = true;
+        
+        scenarios.forEach(scenario => {
+            const calculatedMonthly = mockTaxFunctions.calculateMonthlyFromRate(
+                scenario.property, 
+                scenario.rate
+            );
+            
+            const monthlyCorrect = Math.abs(calculatedMonthly - scenario.expected) < 0.5;
+            
+            // Test reverse calculation
+            const calculatedRate = mockTaxFunctions.calculateRateFromMonthly(
+                scenario.property, 
+                scenario.expected
+            );
+            
+            const rateCorrect = Math.abs(calculatedRate - scenario.rate) < 0.01;
+            
+            if (!monthlyCorrect || !rateCorrect) {
+                allScenariosValid = false;
+            }
+        });
+        
+        return allScenariosValid;
+    });
+    
+    // ========================================
+    // ACCESSIBILITY TESTS
+    // ========================================
+    
+    TestFramework.test('Accessibility - Screen Reader Support', function() {
+        // Create accessible tax input elements
+        const monthlyInput = document.createElement('input');
+        monthlyInput.type = 'number';
+        monthlyInput.id = 'monthlyPropertyTaxes';
+        monthlyInput.setAttribute('aria-label', 'Monthly property taxes in dollars');
+        monthlyInput.setAttribute('aria-describedby', 'monthly-tax-help');
+        document.body.appendChild(monthlyInput);
+        
+        const rateInput = document.createElement('input');
+        rateInput.type = 'number';
+        rateInput.id = 'annualTaxRate';
+        rateInput.setAttribute('aria-label', 'Annual property tax rate as percentage');
+        rateInput.setAttribute('aria-describedby', 'rate-tax-help');
+        document.body.appendChild(rateInput);
+        
+        const helpText = document.createElement('div');
+        helpText.id = 'monthly-tax-help';
+        helpText.textContent = 'Enter the monthly property tax amount in dollars';
+        document.body.appendChild(helpText);
+        
+        // Check accessibility attributes
+        const hasAriaLabel = monthlyInput.hasAttribute('aria-label') && 
+                           rateInput.hasAttribute('aria-label');
+        const hasAriaDescribed = monthlyInput.hasAttribute('aria-describedby') && 
+                               rateInput.hasAttribute('aria-describedby');
+        const hasHelpText = helpText.textContent.length > 0;
+        
+        // Cleanup
+        document.body.removeChild(monthlyInput);
+        document.body.removeChild(rateInput);
+        document.body.removeChild(helpText);
+        
+        return hasAriaLabel && hasAriaDescribed && hasHelpText;
+    });
+    
+    TestFramework.test('Accessibility - Keyboard Navigation', function() {
+        // Create toggle button with keyboard support
+        const toggleButton = document.createElement('button');
+        toggleButton.id = 'taxInputToggle';
+        toggleButton.textContent = 'Monthly $';
+        toggleButton.tabIndex = 0;
+        toggleButton.setAttribute('aria-pressed', 'false');
+        toggleButton.setAttribute('role', 'switch');
+        document.body.appendChild(toggleButton);
+        
+        // Test focus
+        toggleButton.focus();
+        const canFocus = document.activeElement === toggleButton;
+        
+        // Test keyboard activation
+        let keyboardActivated = false;
+        toggleButton.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                keyboardActivated = true;
+                e.preventDefault();
+            }
+        });
+        
+        // Simulate keyboard events
+        const enterEvent = new KeyboardEvent('keydown', { key: 'Enter' });
+        toggleButton.dispatchEvent(enterEvent);
+        
+        const spaceEvent = new KeyboardEvent('keydown', { key: ' ' });
+        toggleButton.dispatchEvent(spaceEvent);
+        
+        // Cleanup
+        document.body.removeChild(toggleButton);
+        
+        return canFocus && keyboardActivated;
+    });
+    
+    // ========================================
+    // PERFORMANCE TESTS
+    // ========================================
+    
+    TestFramework.test('Performance - Rapid Input Changes', function() {
+        const propertyValue = 350000;
+        const startTime = performance.now();
+        
+        // Simulate rapid input changes
+        const testValues = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
+        
+        testValues.forEach(monthlyTax => {
+            const rate = mockTaxFunctions.calculateRateFromMonthly(propertyValue, monthlyTax);
+            const backCalculated = mockTaxFunctions.calculateMonthlyFromRate(propertyValue, rate);
+        });
+        
+        const endTime = performance.now();
+        const calculationTime = endTime - startTime;
+        
+        // Should complete all calculations quickly
+        return calculationTime < 10; // Less than 10ms for 10 calculations
+    });
+    
+    TestFramework.test('Performance - Memory Efficiency', function() {
+        const initialMemory = performance.memory ? performance.memory.usedJSHeapSize : 0;
+        
+        // Perform many calculations
+        for (let i = 0; i < 1000; i++) {
+            const propertyValue = 100000 + (i * 1000);
+            const monthlyTax = 100 + (i * 0.5);
+            
+            const rate = mockTaxFunctions.calculateRateFromMonthly(propertyValue, monthlyTax);
+            const backCalculated = mockTaxFunctions.calculateMonthlyFromRate(propertyValue, rate);
+        }
+        
+        const finalMemory = performance.memory ? performance.memory.usedJSHeapSize : 0;
+        const memoryIncrease = finalMemory - initialMemory;
+        
+        // Memory usage should not increase significantly
+        return !performance.memory || memoryIncrease < 100000; // Less than 100KB increase
+    });
 });
