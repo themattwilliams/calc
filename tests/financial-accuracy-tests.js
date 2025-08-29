@@ -100,6 +100,10 @@ TestFramework.describe('Financial Accuracy', function() {
             if (console.table) {
                 console.table(failures);
             }
+            const first = failures[0];
+            if (first) {
+                throw new Error(`Mortgage Precision failed → ${first.scenario} | expected ${first.expected.toFixed(2)} got ${first.calculated.toFixed(2)} (diff ${first.difference.toFixed(4)} > 0.01)`);
+            }
         }
         
         return TestFramework.expect(allWithinTolerance).toBe(true);
@@ -421,6 +425,7 @@ TestFramework.describe('Financial Accuracy', function() {
                     onePercentThreshold: purchasePrice * 0.008
                 }
             });
+            throw new Error(`Investment scenario failed → netCashFlow ${netCashFlow.toFixed(2)} (must be > 0), ROI ${cashOnCashROI.toFixed(2)}% (must be 5-20), rent ${monthlyRent} vs 0.8% rule threshold ${(purchasePrice*0.008).toFixed(0)}`);
         }
         
         return TestFramework.expect(passed).toBe(true);
@@ -639,6 +644,7 @@ TestFramework.describe('Financial Accuracy', function() {
                 thresholds: { differenceLT: 0.05, growthRange: '[160000, 170000]' },
                 checks: { precisionMaintained, reasonableGrowth }
             });
+            throw new Error(`Cumulative precision failed → compound ${compoundResult.toFixed(6)} vs iterative ${iterativeResult.toFixed(6)} (diff ${difference.toFixed(8)}), growth reasonable: ${reasonableGrowth}`);
         }
         
         return TestFramework.expect(passed).toBe(true);
