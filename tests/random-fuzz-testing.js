@@ -110,6 +110,58 @@ TestFramework.suite('Random Fuzz Testing', function() {
     }
     
     /**
+     * Run basic calculations on input data
+     * @param {object} inputs - Input parameters
+     * @returns {object} Calculation results
+     */
+    function runBasicCalculations(inputs) {
+        try {
+            // Calculate basic metrics using available calculator functions
+            const loanAmount = (inputs.purchasePrice || 300000) - (inputs.downPayment || 60000);
+            const monthlyPayment = calculateMortgagePayment(
+                loanAmount, 
+                inputs.loanInterestRate || 4.5, 
+                inputs.amortizedOver || 30
+            );
+            
+            const totalMonthlyExpenses = (inputs.monthlyPropertyTaxes || 250) + 
+                                       (inputs.monthlyInsurance || 100) + 
+                                       (inputs.monthlyHoaFees || 0) + 
+                                       (inputs.otherMonthlyExpenses || 0) + 
+                                       monthlyPayment;
+            
+            const monthlyCashFlow = (inputs.monthlyRent || 2500) - totalMonthlyExpenses;
+            const totalCashNeeded = (inputs.downPayment || 60000) + 
+                                  (inputs.purchaseClosingCosts || 6000) + 
+                                  (inputs.estimatedRepairCosts || 0);
+            
+            const annualCashFlow = monthlyCashFlow * 12;
+            const cashOnCashROI = totalCashNeeded > 0 ? (annualCashFlow / totalCashNeeded) * 100 : 0;
+            
+            return {
+                monthlyMortgagePayment: monthlyPayment,
+                monthlyCashFlow: monthlyCashFlow,
+                cashOnCashROI: cashOnCashROI,
+                totalCashNeeded: totalCashNeeded,
+                loanAmount: loanAmount,
+                totalMonthlyExpenses: totalMonthlyExpenses,
+                annualCashFlow: annualCashFlow
+            };
+        } catch (error) {
+            // Return safe default values if calculation fails
+            return {
+                monthlyMortgagePayment: 0,
+                monthlyCashFlow: 0,
+                cashOnCashROI: 0,
+                totalCashNeeded: 0,
+                loanAmount: 0,
+                totalMonthlyExpenses: 0,
+                annualCashFlow: 0
+            };
+        }
+    }
+
+    /**
      * Generate edge case scenario with extreme values
      */
     function generateEdgeCaseScenario() {

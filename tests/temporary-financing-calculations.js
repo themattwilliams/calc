@@ -301,7 +301,7 @@ TestFramework.suite('Temporary Financing Calculations', function() {
         
         TestFramework.test('Minimum values', function() {
             const result = calculateTemporaryFinancingCosts(1, 0.1, 1, 0.1);
-            return TestFramework.expect(result.interestCost).toBeCloseTo(0.000833, 6) &&
+            return TestFramework.expect(result.interestCost).toBeCloseTo(0.00008333333333333333, 6) &&
                    TestFramework.expect(result.pointsCost).toBeCloseTo(0.001, 6);
         });
         
