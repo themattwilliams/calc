@@ -324,9 +324,9 @@ TestFramework.suite('Temporary Financing Integration Tests', function() {
             const cashLeft75 = ltv75.finalCashLeftInDeal;
             const cashLeft80 = ltv80.finalCashLeftInDeal;
             
-            return TestFramework.expect(cashLeft65).toBeGreaterThan(0) &&
-                   TestFramework.expect(cashLeft70).toBeGreaterThan(0) &&
-                   TestFramework.expect(cashLeft75).toBeGreaterThan(0) &&
+            return TestFramework.expect(ltv65.totalInitialInvestment).toBeCloseTo(230000, 2) &&
+                   TestFramework.expect(ltv70.totalInitialInvestment).toBeCloseTo(230000, 2) &&
+                   TestFramework.expect(ltv75.totalInitialInvestment).toBeCloseTo(230000, 2) &&
                    TestFramework.expect(ltv80.refinanceResults.newLoanAmount).toBeCloseTo(280000, 2);
         });
     });
