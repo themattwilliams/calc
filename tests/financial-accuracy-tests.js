@@ -73,7 +73,8 @@ TestFramework.describe('Financial Accuracy', function() {
         const results = [];
         
         industryStandards.forEach(standard => {
-            const calculated = calculateMortgagePayment(standard.principal, standard.rate, standard.term);
+            // calculator expects annualRate as decimal (e.g., 0.065)
+            const calculated = calculateMortgagePayment(standard.principal, standard.rate / 100, standard.term);
             const difference = Math.abs(calculated - standard.expected);
             const withinTolerance = difference <= standard.tolerance;
             
@@ -147,7 +148,7 @@ TestFramework.describe('Financial Accuracy', function() {
         
         extremeScenarios.forEach(scenario => {
             try {
-                const result = calculateMortgagePayment(scenario.principal, scenario.rate, scenario.term);
+                const result = calculateMortgagePayment(scenario.principal, scenario.rate / 100, scenario.term);
                 const isValid = isFinite(result) && result > 0;
                 
                 if (scenario.expectValid && !isValid) {
@@ -268,7 +269,7 @@ TestFramework.describe('Financial Accuracy', function() {
         const loanAmount = 200000;
         const annualRate = 6.0;
         const termYears = 30;
-        const monthlyPayment = calculateMortgagePayment(loanAmount, annualRate, termYears);
+        const monthlyPayment = calculateMortgagePayment(loanAmount, annualRate / 100, termYears);
         
         // Calculate first few payments manually to verify accuracy
         const monthlyRate = annualRate / 100 / 12;
@@ -316,7 +317,7 @@ TestFramework.describe('Financial Accuracy', function() {
         const downPayment = purchasePrice * 0.035; // 3.5%
         const loanAmount = purchasePrice - downPayment;
         const interestRate = 6.25;
-        const monthlyPayment = calculateMortgagePayment(loanAmount, interestRate, 30);
+        const monthlyPayment = calculateMortgagePayment(loanAmount, interestRate / 100, 30);
         
         // FHA mortgage insurance (approximate)
         const annualMIP = loanAmount * 0.0085; // 0.85% annual
@@ -343,7 +344,7 @@ TestFramework.describe('Financial Accuracy', function() {
         const downPayment = purchasePrice * 0.20; // 20% typical for jumbo
         const loanAmount = purchasePrice - downPayment;
         const interestRate = 6.75; // Typically higher than conforming
-        const monthlyPayment = calculateMortgagePayment(loanAmount, interestRate, 30);
+        const monthlyPayment = calculateMortgagePayment(loanAmount, interestRate / 100, 30);
         
         // Calculate debt-to-income assumptions
         const assumedMonthlyIncome = 25000; // High income required for jumbo
@@ -367,7 +368,7 @@ TestFramework.describe('Financial Accuracy', function() {
         const downPayment = purchasePrice * 0.25; // 25% typical for investment
         const loanAmount = purchasePrice - downPayment;
         const interestRate = 7.0; // Higher rate for investment property
-        const monthlyPayment = calculateMortgagePayment(loanAmount, interestRate, 30);
+        const monthlyPayment = calculateMortgagePayment(loanAmount, interestRate / 100, 30);
         
         // Rental income and expenses
         const monthlyRent = 2800;
@@ -555,7 +556,7 @@ TestFramework.describe('Financial Accuracy', function() {
         // Calculate the same payment 1000 times
         const results = [];
         for (let i = 0; i < 1000; i++) {
-            results.push(calculateMortgagePayment(baseScenario.principal, baseScenario.rate, baseScenario.term));
+            results.push(calculateMortgagePayment(baseScenario.principal, baseScenario.rate / 100, baseScenario.term));
         }
         
         // Check that all results are identical (no floating point drift)

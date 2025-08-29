@@ -141,7 +141,7 @@ TestFramework.suite('Random Fuzz Testing', function() {
             if (typeof calculateMortgagePayment === 'function') {
                 monthlyPayment = calculateMortgagePayment(
                     loanAmount, 
-                    inputs.loanInterestRate || 4.5, 
+                    (inputs.loanInterestRate || 4.5) / 100, 
                     inputs.amortizedOver || 30
                 );
             } else {
