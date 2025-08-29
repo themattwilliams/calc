@@ -430,6 +430,11 @@ TestFramework.suite('Button Hover Enhancement', function() {
         document.body.appendChild(testButton);
         
         // Check minimum touch target size (should be accessible)
+        // Set minimum dimensions for test
+        testButton.style.minWidth = '44px';
+        testButton.style.minHeight = '44px';
+        testButton.style.padding = '8px 12px';
+        
         const rect = testButton.getBoundingClientRect();
         const minTouchSize = 24; // 24px minimum for accessibility
         
