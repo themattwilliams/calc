@@ -110,6 +110,24 @@ TestFramework.suite('Random Fuzz Testing', function() {
     }
     
     /**
+     * Debug function availability
+     */
+    function debugFunctionAvailability() {
+        const functions = [
+            'calculateMortgagePayment',
+            'calculateCashOnCashROI',
+            'calculateNOI',
+            'calculateCapRate'
+        ];
+        
+        console.log('=== Function Availability Debug ===');
+        functions.forEach(funcName => {
+            console.log(`${funcName}: ${typeof window[funcName] !== 'undefined' ? 'AVAILABLE' : 'NOT AVAILABLE'}`);
+        });
+        console.log('=====================================');
+    }
+
+    /**
      * Run basic calculations on input data
      * @param {object} inputs - Input parameters
      * @returns {object} Calculation results
@@ -760,6 +778,9 @@ TestFramework.suite('Random Fuzz Testing', function() {
     // ========================================
     
     TestFramework.test('Market Scenarios - International Property Markets', function() {
+        // Debug function availability first
+        debugFunctionAvailability();
+        
         // Test scenarios from different international markets
         const internationalScenarios = [
             { name: 'Tokyo High-Rise', price: 800000, rent: 4000, taxes: 800, insurance: 200 },
@@ -787,6 +808,7 @@ TestFramework.suite('Random Fuzz Testing', function() {
                 
                 // Check if results are valid
                 if (!results || typeof results !== 'object') {
+                    console.error(`International Markets Test - Null results for scenario: ${scenario.name}`, {inputs, results});
                     allScenariosValid = false;
                     return;
                 }

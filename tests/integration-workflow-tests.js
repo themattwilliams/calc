@@ -285,13 +285,19 @@ TestFramework.describe('Integration Workflows', function() {
         const formattedDate = date.toLocaleDateString().replace(/\//g, '-');
         const filename = `${sanitizedAddress}_analysis_${formattedDate}.md`;
         
-        const results = [
+        // Test positive conditions
+        const positiveTests = [
             TestFramework.expect(filename).toContain('123_Quick_Entry_Test_St'),
             TestFramework.expect(filename).toContain('analysis'),
-            TestFramework.expect(filename).toContain('.md'),
-            TestFramework.expect(filename).not.toContain('#'),
-            TestFramework.expect(filename).not.toContain('/')
+            TestFramework.expect(filename).toContain('.md')
         ];
+        
+        // Test negative conditions without using .not
+        const hasNoHash = !filename.includes('#');
+        const hasNoSlash = !filename.includes('/');
+        const negativeTests = [hasNoHash, hasNoSlash];
+        
+        const results = [...positiveTests, ...negativeTests];
         
         return results.every(result => result === true);
     });
