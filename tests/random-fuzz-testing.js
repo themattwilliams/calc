@@ -554,7 +554,7 @@ TestFramework.suite('Random Fuzz Testing', function() {
         boundaryTests.forEach((test, i) => {
             try {
                 
-                const payment = calculateMortgagePayment(test.loanAmount, test.rate, test.years);
+                const payment = calculateMortgagePayment(test.loanAmount, test.rate / 100, test.years);
                 
                 // Check for mathematical validity
                 if (test.loanAmount === 0) {
