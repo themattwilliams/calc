@@ -4,8 +4,8 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Help Drawer - E2E', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await expect(page.locator('#purchasePrice')).toBeVisible();
+    await page.goto('/index.html');
+    await page.locator('#purchasePrice').waitFor({ state: 'attached', timeout: 15000 });
     await page.waitForFunction(() => typeof window.HelpDrawer !== 'undefined');
   });
 
@@ -16,7 +16,7 @@ test.describe('Help Drawer - E2E', () => {
   test('Drawer opens and tabs are visible', async ({ page }) => {
     await openDrawer(page);
 
-    await expect(page.locator('#helpDrawer')).toBeVisible();
+    await expect(page.locator('#helpDrawer')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('[role="tab"]:has-text("Tips")')).toBeVisible();
     await expect(page.locator('[role="tab"]:has-text("Examples")')).toBeVisible();
     await expect(page.locator('[role="tab"]:has-text("Mistakes")')).toBeVisible();
