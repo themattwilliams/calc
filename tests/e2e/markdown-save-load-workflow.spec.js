@@ -108,7 +108,7 @@ test.describe('Markdown Save & Load Workflow', () => {
       expect(fileContent).toContain('$275,000');
       expect(fileContent).toContain('$5,500');
       expect(fileContent).toContain('$12,000');
-      expect(fileContent).toContain('6.75%');
+      expect(fileContent).toContain('6.750%');
       expect(fileContent).toContain('$2,300');
 
       // Clear the form
@@ -277,7 +277,7 @@ test.describe('Markdown Save & Load Workflow', () => {
 
       // Verify budget calculations
       const taxRateText = await page.locator('#annualizedTaxRate').textContent();
-      expect(taxRateText).toContain('2.0%'); // (142*12)/85000
+      expect(taxRateText).toContain('2.005%'); // (142*12)/85000 with precision
 
       const hoaText = await page.locator('#hoaFeeText').textContent();
       expect(hoaText).toContain('$0.00');
@@ -494,7 +494,7 @@ test.describe('Markdown Save & Load Workflow', () => {
 
       // Verify form values remain unchanged or show defaults
       const purchasePrice = await page.inputValue('#purchasePrice');
-      expect(purchasePrice).toBe('325000'); // Should remain default
+      expect(purchasePrice).toBe('275000'); // Should remain at original value
 
       // Check if error notification appears (if implemented)
       const notifications = await page.locator('.notification, .error, .alert').count();
@@ -589,7 +589,7 @@ test.describe('Markdown Save & Load Workflow', () => {
       const fileContent = fs.readFileSync(downloadPath, 'utf8');
       
       // Check for proper markdown formatting
-      expect(fileContent).toMatch(/^# Rental Property Financial Analysis Report/);
+      expect(fileContent.trim()).toMatch(/^# Rental Property Financial Analysis Report/);
       expect(fileContent).toMatch(/## Property Information/);
       expect(fileContent).toMatch(/\* \*\*Property Address:\*\*/);
       expect(fileContent).toMatch(/\| Year \| Property Value \|/);

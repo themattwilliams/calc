@@ -6,6 +6,17 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Register Chart.js plugins if present (CDN globals vary by plugin)
+    try {
+        if (window.Chart && window.Chart.register) {
+            const plugins = [
+                window.ChartDataLabels,
+                window.ChartZoom || window["chartjs-plugin-zoom"],
+                window.ChartAnnotation || window["chartjs-plugin-annotation"]
+            ].filter(Boolean);
+            plugins.forEach(p => { try { window.Chart.register(p); } catch (e) {} });
+        }
+    } catch (e) { console.warn('Chart plugin registration warning:', e); }
     
     // ========================================
     // DOM ELEMENTS AND INITIALIZATION
@@ -21,6 +32,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const printBtn = document.getElementById('printBtn');
     const markdownFileInput = document.getElementById('markdownFileInput');
     const quickEntryButtons = document.querySelectorAll('.btn-quick-entry');
+    // Export/reset buttons
+    const exportButtons = {
+        returnDecomp: { png: document.getElementById('exportReturnDecompPng'), csv: document.getElementById('exportReturnDecompCsv'), reset: document.getElementById('resetReturnDecompZoom') },
+        irrCurve: { png: document.getElementById('exportIrrCurvePng'), csv: document.getElementById('exportIrrCurveCsv'), reset: document.getElementById('resetIrrCurveZoom') },
+        debtLtv: { png: document.getElementById('exportDebtLtvPng'), csv: document.getElementById('exportDebtLtvCsv'), reset: document.getElementById('resetDebtLtvZoom') },
+        tornado: { png: document.getElementById('exportTornadoPng'), csv: document.getElementById('exportTornadoCsv') },
+        waterfall: { png: document.getElementById('exportWaterfallPng'), csv: document.getElementById('exportWaterfallCsv') }
+    };
     
     // Temporary financing elements
     const useTemporaryFinancingCheckbox = document.getElementById('useTemporaryFinancing');
@@ -54,12 +73,55 @@ document.addEventListener('DOMContentLoaded', function() {
     const charts = {
         incomeExpensesChart: null,
         equityValueChart: null,
-        amortizationChart: null
+        amortizationChart: null,
+        returnDecompositionChart: null,
+        irrCurveChart: null,
+        debtLtvChart: null,
+        tornadoChart: null,
+        brrrWaterfallChart: null
     };
     
     // Store calculation data for tooltips and charts
     let calculationData = {};
     let projectionData = [];
+    // Expose projectionData and charts for tests
+    window.projectionData = projectionData;
+    window.AppCharts = window.AppCharts || {};
+
+    // ==========================
+    // Export helpers
+    // ==========================
+    function exportChartPng(canvasEl, name) {
+        try {
+            const url = canvasEl.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${name}.png`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (e) { console.error('PNG export error:', e); }
+    }
+
+    function exportChartCsv(labels, seriesArrays, headers, name) {
+        try {
+            const head = ['Label', ...headers].join(',');
+            const rows = labels.map((lab, idx) => {
+                const cols = seriesArrays.map(arr => (arr[idx] ?? ''));
+                return [lab, ...cols].join(',');
+            });
+            const csv = [head, ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${name}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch (e) { console.error('CSV export error:', e); }
+    }
     
     // ========================================
     // INPUT VALIDATION FUNCTIONS
@@ -341,6 +403,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const projections = generate30YearProjections(projectionInputs);
         
+        // Expose projection data globally for testing
+        window.projectionData = projections;
+        
         // Calculate first year return on equity for display
         if (projections.length > 0) {
             const firstYear = projections[0];
@@ -387,7 +452,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isNaN(value) || value === null || value === undefined) {
             return '0.0%';
         }
-        return `${value.toFixed(1)}%`;
+        
+        // Check if it's a whole number
+        if (value % 1 === 0) {
+            return `${value.toFixed(1)}%`;
+        }
+        
+        // For non-whole numbers, use at least 3 decimal places
+        const formatted = value.toFixed(3);
+        // Remove trailing zeros but keep at least 3 decimal places for non-whole numbers
+        const trimmed = parseFloat(formatted).toString();
+        const decimalPlaces = trimmed.includes('.') ? trimmed.split('.')[1].length : 0;
+        
+        if (decimalPlaces < 3) {
+            return `${value.toFixed(3)}%`;
+        }
+        
+        return `${trimmed}%`;
     }
     
     /**
@@ -399,7 +480,30 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isNaN(value) || value === null || value === undefined) {
             return '$0.00';
         }
-        return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        
+        // Handle negative values - put the negative sign before the dollar sign
+        const isNegative = value < 0;
+        const absValue = Math.abs(value);
+        
+        let formattedValue;
+        
+        // Check if it's a whole number
+        if (absValue % 1 === 0) {
+            formattedValue = absValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        } else {
+            // For non-whole numbers, use at least 3 decimal places
+            const formatted = absValue.toFixed(3);
+            const trimmed = parseFloat(formatted);
+            const decimalPlaces = formatted.includes('.') ? formatted.split('.')[1].length : 0;
+            
+            if (decimalPlaces < 3) {
+                formattedValue = absValue.toFixed(3);
+            } else {
+                formattedValue = trimmed.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 10 });
+            }
+        }
+        
+        return isNegative ? `-$${formattedValue}` : `$${formattedValue}`;
     }
     
     /**
@@ -412,7 +516,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isNaN(value) || value === null || value === undefined) {
             return '0.00';
         }
-        return value.toFixed(decimals);
+        
+        // Check if it's a whole number
+        if (value % 1 === 0) {
+            return value.toFixed(Math.max(decimals, 2));
+        }
+        
+        // For non-whole numbers, use at least 3 decimal places
+        const minDecimals = Math.max(decimals, 3);
+        const formatted = value.toFixed(minDecimals);
+        const trimmed = parseFloat(formatted).toString();
+        const actualDecimals = trimmed.includes('.') ? trimmed.split('.')[1].length : 0;
+        
+        if (actualDecimals < 3) {
+            return value.toFixed(3);
+        }
+        
+        return trimmed;
     }
     
     /**
@@ -537,7 +657,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             return `${context.dataset.label}: ${formatCurrency(context.raw)}`;
                         }
                     }
-                }
+                },
+                datalabels: { display: false }
             }
         };
         
@@ -549,6 +670,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Chart 3: Loan Amortization
         updateAmortizationChart(years, projections, chartConfig);
+
+        // Advanced: Return Decomposition (stacked area)
+        updateReturnDecompositionChart(years, projections, chartConfig);
+
+        // Advanced: IRR vs Hold Period
+        updateIrrCurveChart(years, projections, chartConfig);
+
+        // Advanced: Debt Yield & LTV Over Time (dual-axis)
+        updateDebtLtvChart(years, projections, chartConfig);
+
+        // Tornado Sensitivity
+        updateTornadoChart(projections, chartConfig);
+
+        // BRRRR Waterfall (if enabled and inputs present)
+        updateBrrrWaterfallChart(chartConfig);
     }
     
     /**
@@ -593,6 +729,21 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             options: baseConfig
         });
+        // Export wiring
+        const btnPng = document.getElementById('exportIncomePng');
+        const btnCsv = document.getElementById('exportIncomeCsv');
+        const btnReset = document.getElementById('resetIncomeZoom');
+        btnPng && btnPng.addEventListener('click', () => exportChartPng(document.getElementById('incomeExpensesChart'), 'income_expenses'));
+        btnCsv && btnCsv.addEventListener('click', () => exportChartCsv(
+            years,
+            [projections.map(p=>p.annualIncome), projections.map(p=>p.annualExpenses), projections.map(p=>p.annualCashFlow)],
+            ['Income','Expenses','CashFlow'],
+            'income_expenses'
+        ));
+        btnReset && btnReset.addEventListener('click', () => charts.incomeExpensesChart.resetZoom && charts.incomeExpensesChart.resetZoom());
+        
+        // Expose for testing
+        window.AppCharts.incomeExpenses = charts.incomeExpensesChart;
     }
     
     /**
@@ -637,6 +788,20 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             options: baseConfig
         });
+        const btnPng = document.getElementById('exportEquityPng');
+        const btnCsv = document.getElementById('exportEquityCsv');
+        const btnReset = document.getElementById('resetEquityZoom');
+        btnPng && btnPng.addEventListener('click', () => exportChartPng(document.getElementById('equityValueChart'), 'equity_value'));
+        btnCsv && btnCsv.addEventListener('click', () => exportChartCsv(
+            years,
+            [projections.map(p=>p.propertyValue), projections.map(p=>p.equity), projections.map(p=>p.loanBalance)],
+            ['PropertyValue','Equity','LoanBalance'],
+            'equity_value'
+        ));
+        btnReset && btnReset.addEventListener('click', () => charts.equityValueChart.resetZoom && charts.equityValueChart.resetZoom());
+        
+        // Expose for testing
+        window.AppCharts.equityValue = charts.equityValueChart;
     }
     
     /**
@@ -686,6 +851,255 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             options: stackedConfig
         });
+        const btnPng = document.getElementById('exportAmortPng');
+        const btnCsv = document.getElementById('exportAmortCsv');
+        const btnReset = document.getElementById('resetAmortZoom');
+        btnPng && btnPng.addEventListener('click', () => exportChartPng(document.getElementById('amortizationChart'), 'amortization'));
+        btnCsv && btnCsv.addEventListener('click', () => exportChartCsv(
+            years,
+            [projections.map(p=>p.interestPayment), projections.map(p=>p.principalPayment)],
+            ['Interest','Principal'],
+            'amortization'
+        ));
+        btnReset && btnReset.addEventListener('click', () => charts.amortizationChart.resetZoom && charts.amortizationChart.resetZoom());
+        
+        // Expose for testing
+        window.AppCharts.amortization = charts.amortizationChart;
+    }
+
+    // ==========================
+    // Advanced Charts
+    // ==========================
+
+    function updateReturnDecompositionChart(years, projections, baseConfig) {
+        const ctxEl = document.getElementById('returnDecompositionChart');
+        if (!ctxEl) return;
+        if (charts.returnDecompositionChart) charts.returnDecompositionChart.destroy();
+
+        const principal = projections.map(p => p.principalPayment);
+        const cashflow = projections.map(p => p.annualCashFlow);
+        const appreciation = projections.map(p => p.appreciation || 0);
+
+        const stackedConfig = JSON.parse(JSON.stringify(baseConfig));
+        stackedConfig.scales.y.stacked = true;
+        stackedConfig.scales.x.stacked = true;
+
+        charts.returnDecompositionChart = new Chart(ctxEl.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: years,
+                datasets: [
+                    { label: 'Principal Paydown', data: principal, fill: true, borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,0.3)', tension: 0.1 },
+                    { label: 'Cash Flow', data: cashflow, fill: true, borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.3)', tension: 0.1 },
+                    { label: 'Appreciation', data: appreciation, fill: true, borderColor: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.3)', tension: 0.1 }
+                ]
+            },
+            options: {
+                ...stackedConfig,
+                plugins: {
+                    ...stackedConfig.plugins,
+                    zoom: { zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }, pan: { enabled: true, mode: 'x' } }
+                }
+            }
+        });
+
+        // Wire export/reset
+        exportButtons.returnDecomp.png?.addEventListener('click', () => exportChartPng(ctxEl, 'return_decomposition'));
+        exportButtons.returnDecomp.csv?.addEventListener('click', () => exportChartCsv(years, [principal, cashflow, appreciation], ['Principal','CashFlow','Appreciation'], 'return_decomposition'));
+        exportButtons.returnDecomp.reset?.addEventListener('click', () => charts.returnDecompositionChart.resetZoom());
+        
+        // Expose for testing
+        window.AppCharts.returnDecomposition = charts.returnDecompositionChart;
+    }
+
+    function updateIrrCurveChart(years, projections, baseConfig) {
+        const ctxEl = document.getElementById('irrCurveChart');
+        if (!ctxEl) return;
+        if (charts.irrCurveChart) charts.irrCurveChart.destroy();
+
+        // Build approximate annual cashflows for IRR by year N
+        const annualCF = projections.map(p => p.annualCashFlow);
+        const irrByYear = years.map((y, idx) => {
+            const flows = [-parseNumericInput(document.getElementById('downPayment').value)];
+            for (let i = 0; i <= idx; i++) flows.push(annualCF[i] || 0);
+            const irr = (window.CalculatorFunctions?.calculateIRR?.(flows) ?? NaN);
+            return Number.isFinite(irr) ? irr * 100 : null;
+        });
+
+        const cfg = JSON.parse(JSON.stringify(baseConfig));
+        cfg.scales.y.title.text = 'IRR (%)';
+        cfg.plugins.tooltip.callbacks.label = function(context) {
+            return `${context.dataset.label}: ${formatNumber(context.raw, 2)}%`;
+        };
+
+        charts.irrCurveChart = new Chart(ctxEl.getContext('2d'), {
+            type: 'line',
+            data: { labels: years, datasets: [{ label: 'IRR vs Hold', data: irrByYear, borderColor: '#f472b6', backgroundColor: 'transparent', tension: 0.1, borderWidth: 2 }] },
+            options: { ...cfg, plugins: { ...cfg.plugins, zoom: { zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }, pan: { enabled: true, mode: 'x' } } } }
+        });
+
+        exportButtons.irrCurve.png?.addEventListener('click', () => exportChartPng(ctxEl, 'irr_curve'));
+        exportButtons.irrCurve.csv?.addEventListener('click', () => exportChartCsv(years, [irrByYear], ['IRR%'], 'irr_curve'));
+        exportButtons.irrCurve.reset?.addEventListener('click', () => charts.irrCurveChart.resetZoom());
+        
+        // Expose for testing
+        window.AppCharts.irrCurve = charts.irrCurveChart;
+    }
+
+    function updateDebtLtvChart(years, projections, baseConfig) {
+        const ctxEl = document.getElementById('debtLtvChart');
+        if (!ctxEl) return;
+        if (charts.debtLtvChart) charts.debtLtvChart.destroy();
+
+        const principal = projections.map(p => p.principalPayment);
+        const interest = projections.map(p => p.interestPayment);
+        const annualDebtService = projections.map((_, i) => principal[i] + interest[i]);
+        const noi = projections.map(p => p.annualIncome - p.annualExpenses);
+        const dscr = annualDebtService.map((ds, i) => (ds === 0 ? null : (noi[i] / ds)));
+
+        // Debt Yield = NOI / Loan Amount (use remaining balance as proxy)
+        const debtYield = projections.map(p => (p.loanBalance === 0 ? null : ( (p.annualIncome - p.annualExpenses) / p.loanBalance * 100 )));
+        const ltv = projections.map(p => (p.propertyValue === 0 ? null : (p.loanBalance / p.propertyValue * 100)));
+
+        const cfg = JSON.parse(JSON.stringify(baseConfig));
+        cfg.scales.y.title.text = 'Debt Yield (%)';
+        cfg.scales.y2 = { position: 'right', title: { display: true, text: 'LTV (%)', color: '#e2e8f0' }, ticks: { color: '#a0aec0' }, grid: { drawOnChartArea: false } };
+        cfg.plugins.tooltip.callbacks.label = function(context) {
+            const suffix = context.dataset.yAxisID === 'y2' ? '%' : '%';
+            return `${context.dataset.label}: ${formatNumber(context.raw, 2)}${suffix}`;
+        };
+
+        charts.debtLtvChart = new Chart(ctxEl.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: years,
+                datasets: [
+                    { label: 'Debt Yield', data: debtYield, borderColor: '#34d399', backgroundColor: 'transparent', tension: 0.1, borderWidth: 2, yAxisID: 'y' },
+                    { label: 'LTV', data: ltv, borderColor: '#f87171', backgroundColor: 'transparent', tension: 0.1, borderWidth: 2, yAxisID: 'y2' }
+                ]
+            },
+            options: {
+                ...cfg,
+                plugins: {
+                    ...cfg.plugins,
+                    annotation: {
+                        annotations: {
+                            ltvTarget: { type: 'line', yMin: 75, yMax: 75, borderColor: '#fbbf24', borderWidth: 1, yScaleID: 'y2', label: { display: true, content: 'LTV 75%' } }
+                        }
+                    },
+                    zoom: { zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }, pan: { enabled: true, mode: 'x' } }
+                }
+            }
+        });
+        // expose for tests
+        window.AppCharts.debtLtv = charts.debtLtvChart;
+
+        exportButtons.debtLtv.png?.addEventListener('click', () => exportChartPng(ctxEl, 'debt_ltv'));
+        exportButtons.debtLtv.csv?.addEventListener('click', () => exportChartCsv(years, [debtYield, ltv], ['DebtYield%','LTV%'], 'debt_ltv'));
+        exportButtons.debtLtv.reset?.addEventListener('click', () => charts.debtLtvChart.resetZoom());
+    }
+
+    function updateTornadoChart(projections, baseConfig) {
+        const ctxEl = document.getElementById('tornadoChart');
+        if (!ctxEl) return;
+        if (charts.tornadoChart) charts.tornadoChart.destroy();
+
+        // Real recomputation: +/-10% on key drivers
+        const drivers = [
+            { key: 'monthlyRent', label: 'Rent', type: 'mul' },
+            { key: 'monthlyPropertyTaxes', label: 'Taxes', type: 'mul' },
+            { key: 'monthlyInsurance', label: 'Insurance', type: 'mul' },
+            { key: 'monthlyManagement', label: 'Management', type: 'mul' },
+            { key: 'loanInterestRate', label: 'Rate', type: 'mul' }
+        ];
+
+        const baseInputs = { ...calculationData };
+        const baseFlows = [-parseNumericInput(document.getElementById('downPayment').value)];
+        for (let i = 0; i < Math.min(10, projections.length); i++) baseFlows.push(projections[i].annualCashFlow || 0);
+        const baseIrr = (window.CalculatorFunctions?.calculateIRR?.(baseFlows) ?? NaN) * 100;
+        const baseCF = projections[0]?.annualCashFlow || 0;
+
+        function recomputeDelta(key, factor) {
+            // Clone inputs and apply factor
+            const inputs = collectInputValues();
+            if (key in inputs) {
+                if (typeof inputs[key] === 'number') {
+                    inputs[key] = inputs[key] * factor;
+                }
+            }
+            const metrics = calculateInitialMetrics(inputs);
+            const proj = generateProjections(inputs, metrics);
+            const cf1 = proj[0]?.annualCashFlow || 0;
+            const flows = [-inputs.downPayment];
+            for (let i = 0; i < Math.min(10, proj.length); i++) flows.push(proj[i].annualCashFlow || 0);
+            const irr = (window.CalculatorFunctions?.calculateIRR?.(flows) ?? NaN) * 100;
+            return { cf1, irr };
+        }
+
+        const bars = drivers.map(d => {
+            const low = recomputeDelta(d.key, 0.9);
+            const high = recomputeDelta(d.key, 1.1);
+            return { label: d.label, cfLow: low.cf1, cfHigh: high.cf1, irrLow: low.irr, irrHigh: high.irr };
+        });
+
+        // Sort by impact (CF range) descending
+        bars.sort((a,b) => (b.cfHigh - b.cfLow) - (a.cfHigh - a.cfLow));
+
+        const labels = bars.map(b => b.label);
+        const cfLow = bars.map(b => b.cfLow);
+        const cfHigh = bars.map(b => b.cfHigh);
+
+        const cfg = JSON.parse(JSON.stringify(baseConfig));
+        cfg.indexAxis = 'y';
+        cfg.plugins.tooltip.callbacks.label = function(context) {
+            return `${context.dataset.label}: ${formatCurrency(context.raw)}`;
+        };
+
+        charts.tornadoChart = new Chart(ctxEl.getContext('2d'), {
+            type: 'bar',
+            data: { labels, datasets: [
+                { label: 'CF - Low', data: cfLow, backgroundColor: 'rgba(248,113,113,0.5)' },
+                { label: 'CF - High', data: cfHigh, backgroundColor: 'rgba(74,222,128,0.5)' }
+            ] },
+            options: cfg
+        });
+        // Expose for testing
+        window.AppCharts.tornado = charts.tornadoChart;
+        exportButtons.tornado.png?.addEventListener('click', () => exportChartPng(ctxEl, 'tornado'));
+        exportButtons.tornado.csv?.addEventListener('click', () => exportChartCsv(labels, [cfLow, cfHigh], ['CF_Low','CF_High'], 'tornado'));
+    }
+
+    function updateBrrrWaterfallChart(baseConfig) {
+        const ctxEl = document.getElementById('brrrWaterfallChart');
+        if (!ctxEl || !window.ChartWaterfallController) return;
+        if (charts.brrrWaterfallChart) charts.brrrWaterfallChart.destroy();
+
+        // Minimal example: proceeds minus points/fees results in cash returned
+        const proceeds = parseNumericInput(document.getElementById('tempFinancingAmount')?.value) || 0;
+        const points = (parseNumericInput(document.getElementById('originationPoints')?.value) || 0) / 100 * proceeds;
+        const fees = parseNumericInput(document.getElementById('loanFees')?.value) || 0;
+        const cashReturned = Math.max(0, proceeds - points - fees);
+
+        const cfg = JSON.parse(JSON.stringify(baseConfig));
+        cfg.plugins.tooltip.callbacks.label = function(context) {
+            return `${context.dataset.label || context.label}: ${formatCurrency(context.raw)}`;
+        };
+
+        charts.brrrWaterfallChart = new Chart(ctxEl.getContext('2d'), {
+            type: 'waterfall',
+            data: {
+                labels: ['Proceeds', 'Points', 'Fees', 'Cash Returned'],
+                datasets: [{
+                    data: [proceeds, -points, -fees, cashReturned],
+                    barThickness: 24,
+                    backgroundColor: ['#60a5fa', '#f87171', '#fbbf24', '#34d399']
+                }]
+            },
+            options: cfg
+        });
+        
+        // Expose for testing
+        window.AppCharts.brrrWaterfall = charts.brrrWaterfallChart;
     }
     
     // ========================================
@@ -834,6 +1248,10 @@ First Year ROE: ${formatPercentage(d.returnOnEquity || 0)}`;
 * **Monthly Insurance:** ${formatCurrency(inputs.monthlyInsurance)}
 * **Quarterly HOA Fees:** ${formatCurrency(inputs.quarterlyHoaFees)}
 * **Monthly Management Fee:** ${formatPercentage(inputs.monthlyManagement)}
+* **Electricity Utility:** ${formatCurrency(inputs.electricityUtility)}
+* **Gas Utility:** ${formatCurrency(inputs.gasUtility)}
+* **Water & Sewer Utility:** ${formatCurrency(inputs.waterSewerUtility)}
+* **Garbage Utility:** ${formatCurrency(inputs.garbageUtility)}
 * **Other Monthly Expenses:** ${formatCurrency(inputs.otherMonthlyExpenses)}
 
 ## Growth Projections
@@ -884,25 +1302,37 @@ ${projectionData.filter(d => d.year === 1 || d.year === 5 || d.year === 10 || d.
      */
     function loadFromMarkdown(fileContent) {
         try {
-            // Parse the markdown content to extract data
-            const data = parseMarkdownReport(fileContent);
+            // Validate markdown structure and content first
+            const validation = window.validateMarkdownStructure(fileContent);
+            
+            if (!validation.isValid) {
+                console.error('Markdown validation failed:', validation.errors);
+                alert('File validation failed:\n\n' + validation.errors.join('\n\n') + '\n\nPlease ensure the file is a valid markdown report generated by this calculator.');
+                return;
+            }
+            
+            // Sanitize the content before parsing
+            const sanitizedContent = window.sanitizeHTML(fileContent);
+            
+            // Parse the sanitized markdown content to extract data
+            const data = parseMarkdownReport(sanitizedContent);
             
             if (!data) {
                 alert('Unable to parse the markdown file. Please ensure it was generated by this calculator.');
                 return;
             }
             
-            // Populate form fields with the parsed data
+            // Populate form fields with the parsed and sanitized data
             populateFormFromData(data);
             
             // Trigger calculation update
             updateCalculations();
             
-            console.log('Successfully loaded data from markdown file');
+            console.log('✅ Markdown file loaded successfully (validated and sanitized)');
             
         } catch (error) {
             console.error('Error loading from markdown:', error);
-            alert('Error loading the markdown file. Please check the file format and try again.');
+            alert('Error loading the markdown file. Please check the file format and ensure it contains valid data.');
         }
     }
 
@@ -913,50 +1343,67 @@ ${projectionData.filter(d => d.year === 1 || d.year === 5 || d.year === 10 || d.
         const data = {};
         
         try {
-            // Property Information section
-            const propertyMatch = content.match(/\*\*Address:\*\* (.+)/);
+            // Property Information section - handle both formats
+            const propertyMatch = content.match(/\*\*(?:Property )?Address:\*\* (.+)/);
             if (propertyMatch) data.propertyAddress = propertyMatch[1];
             
             const purchasePriceMatch = content.match(/\*\*Purchase Price:\*\* \$([0-9,]+\.?[0-9]*)/);
             if (purchasePriceMatch) data.purchasePrice = parseFloat(purchasePriceMatch[1].replace(/,/g, ''));
             
-            const closingCostsMatch = content.match(/\*\*Closing Costs:\*\* \$([0-9,]+\.?[0-9]*)/);
+            const closingCostsMatch = content.match(/\*\*(?:Purchase )?Closing Costs:\*\* \$([0-9,]+\.?[0-9]*)/);
             if (closingCostsMatch) data.purchaseClosingCosts = parseFloat(closingCostsMatch[1].replace(/,/g, ''));
             
-            const repairCostsMatch = content.match(/\*\*Repair Costs:\*\* \$([0-9,]+\.?[0-9]*)/);
+            const repairCostsMatch = content.match(/\*\*(?:Estimated )?Repair Costs:\*\* \$([0-9,]+\.?[0-9]*)/);
             if (repairCostsMatch) data.estimatedRepairCosts = parseFloat(repairCostsMatch[1].replace(/,/g, ''));
             
             // Financing section
             const downPaymentMatch = content.match(/\*\*Down Payment:\*\* \$([0-9,]+\.?[0-9]*)/);
             if (downPaymentMatch) data.downPayment = parseFloat(downPaymentMatch[1].replace(/,/g, ''));
             
-            const interestRateMatch = content.match(/\*\*Interest Rate:\*\* ([0-9.]+)%/);
+            const interestRateMatch = content.match(/\*\*(?:Loan )?Interest Rate:\*\* ([0-9.]+)%/);
             if (interestRateMatch) data.loanInterestRate = parseFloat(interestRateMatch[1]);
             
-            const amortizedMatch = content.match(/\*\*Loan Term:\*\* ([0-9]+) years/);
+            const amortizedMatch = content.match(/\*\*(?:Amortized Over|Loan Term):\*\* ([0-9]+) years/);
             if (amortizedMatch) data.amortizedOver = parseInt(amortizedMatch[1]);
+            
+            const loanFeesMatch = content.match(/\*\*Loan Fees:\*\* \$([0-9,]+\.?[0-9]*)/);
+            if (loanFeesMatch) data.loanFees = parseFloat(loanFeesMatch[1].replace(/,/g, ''));
             
             // Income section
             const monthlyRentMatch = content.match(/\*\*Monthly Rent:\*\* \$([0-9,]+\.?[0-9]*)/);
             if (monthlyRentMatch) data.monthlyRent = parseFloat(monthlyRentMatch[1].replace(/,/g, ''));
             
             // Expenses section
-            const propertyTaxesMatch = content.match(/\*\*Property Taxes:\*\* \$([0-9,]+\.?[0-9]*)/);
+            const propertyTaxesMatch = content.match(/\*\*(?:Monthly )?Property Taxes:\*\* \$([0-9,]+\.?[0-9]*)/);
             if (propertyTaxesMatch) data.monthlyPropertyTaxes = parseFloat(propertyTaxesMatch[1].replace(/,/g, ''));
             
-            const insuranceMatch = content.match(/\*\*Insurance:\*\* \$([0-9,]+\.?[0-9]*)/);
+            const insuranceMatch = content.match(/\*\*(?:Monthly )?Insurance:\*\* \$([0-9,]+\.?[0-9]*)/);
             if (insuranceMatch) data.monthlyInsurance = parseFloat(insuranceMatch[1].replace(/,/g, ''));
             
-            const hoaMatch = content.match(/\*\*HOA Fees \(Monthly\):\*\* \$([0-9,]+\.?[0-9]*)/);
+            const hoaMatch = content.match(/\*\*Quarterly HOA Fees:\*\* \$([0-9,]+\.?[0-9]*)/);
             if (hoaMatch) {
-                const monthlyHoa = parseFloat(hoaMatch[1].replace(/,/g, ''));
-                data.quarterlyHoaFees = monthlyHoa * 3; // Convert monthly to quarterly
+                data.quarterlyHoaFees = parseFloat(hoaMatch[1].replace(/,/g, ''));
             }
             
-            const managementMatch = content.match(/\*\*Management:\*\* \$([0-9,]+\.?[0-9]*)/);
-            if (managementMatch) data.monthlyManagement = parseFloat(managementMatch[1].replace(/,/g, ''));
+            // Handle management field - only percentage format supported
+            const managementMatch = content.match(/\*\*(?:Monthly )?Management(?:\s+Fee)?:\*\* ([0-9.]+)%/);
+            if (managementMatch) {
+                data.monthlyManagement = parseFloat(managementMatch[1]);
+            }
             
-            const otherExpensesMatch = content.match(/\*\*Other Expenses:\*\* \$([0-9,]+\.?[0-9]*)/);
+            const electricityMatch = content.match(/\*\*Electricity Utility:\*\* \$([0-9,]+\.?[0-9]*)/);
+            if (electricityMatch) data.electricityUtility = parseFloat(electricityMatch[1].replace(/,/g, ''));
+            
+            const gasMatch = content.match(/\*\*Gas Utility:\*\* \$([0-9,]+\.?[0-9]*)/);
+            if (gasMatch) data.gasUtility = parseFloat(gasMatch[1].replace(/,/g, ''));
+            
+            const waterSewerMatch = content.match(/\*\*Water & Sewer Utility:\*\* \$([0-9,]+\.?[0-9]*)/);
+            if (waterSewerMatch) data.waterSewerUtility = parseFloat(waterSewerMatch[1].replace(/,/g, ''));
+            
+            const garbageMatch = content.match(/\*\*Garbage Utility:\*\* \$([0-9,]+\.?[0-9]*)/);
+            if (garbageMatch) data.garbageUtility = parseFloat(garbageMatch[1].replace(/,/g, ''));
+            
+            const otherExpensesMatch = content.match(/\*\*(?:Other (?:Monthly )?)?Expenses:\*\* \$([0-9,]+\.?[0-9]*)/);
             if (otherExpensesMatch) data.otherMonthlyExpenses = parseFloat(otherExpensesMatch[1].replace(/,/g, ''));
             
             // Growth projections section
@@ -981,8 +1428,11 @@ ${projectionData.filter(d => d.year === 1 || d.year === 5 || d.year === 10 || d.
      * Populates form fields from parsed data
      */
     function populateFormFromData(data) {
-        // Property Information
-        if (data.propertyAddress !== undefined) setInputValue('propertyAddress', data.propertyAddress);
+        // Property Information (sanitize address and custom fields)
+        if (data.propertyAddress !== undefined && data.propertyAddress !== "N/A") {
+            const sanitizedAddress = window.sanitizePropertyAddress(data.propertyAddress);
+            setInputValue('propertyAddress', sanitizedAddress);
+        }
         if (data.purchasePrice !== undefined) setInputValue('purchasePrice', data.purchasePrice);
         if (data.purchaseClosingCosts !== undefined) setInputValue('purchaseClosingCosts', data.purchaseClosingCosts);
         if (data.estimatedRepairCosts !== undefined) setInputValue('estimatedRepairCosts', data.estimatedRepairCosts);
@@ -991,6 +1441,7 @@ ${projectionData.filter(d => d.year === 1 || d.year === 5 || d.year === 10 || d.
         if (data.downPayment !== undefined) setInputValue('downPayment', data.downPayment);
         if (data.loanInterestRate !== undefined) setInputValue('loanInterestRate', data.loanInterestRate);
         if (data.amortizedOver !== undefined) setInputValue('amortizedOver', data.amortizedOver);
+        if (data.loanFees !== undefined) setInputValue('loanFees', data.loanFees);
         
         // Income
         if (data.monthlyRent !== undefined) setInputValue('monthlyRent', data.monthlyRent);
@@ -1000,6 +1451,10 @@ ${projectionData.filter(d => d.year === 1 || d.year === 5 || d.year === 10 || d.
         if (data.monthlyInsurance !== undefined) setInputValue('monthlyInsurance', data.monthlyInsurance);
         if (data.quarterlyHoaFees !== undefined) setInputValue('quarterlyHoaFees', data.quarterlyHoaFees);
         if (data.monthlyManagement !== undefined) setInputValue('monthlyManagement', data.monthlyManagement);
+        if (data.electricityUtility !== undefined) setInputValue('electricityUtility', data.electricityUtility);
+        if (data.gasUtility !== undefined) setInputValue('gasUtility', data.gasUtility);
+        if (data.waterSewerUtility !== undefined) setInputValue('waterSewerUtility', data.waterSewerUtility);
+        if (data.garbageUtility !== undefined) setInputValue('garbageUtility', data.garbageUtility);
         if (data.otherMonthlyExpenses !== undefined) setInputValue('otherMonthlyExpenses', data.otherMonthlyExpenses);
         
         // Growth projections
@@ -1643,3 +2098,5 @@ ${projectionData.filter(d => d.year === 1 || d.year === 5 || d.year === 10 || d.
     
     console.log('✅ Rental Property Analysis Calculator initialized');
 });
+
+

@@ -321,15 +321,35 @@ Footer
 
 ---
 
-## 11. Future Roadmap (Out of Scope)
+## 11. Future Roadmap
 
-### 11.1 Phase 2 Enhancements
-- Multi-property comparison tool
-- Advanced tax calculation options
+### 11.1 Current Development Phase (High Priority)
+**Status**: Ready for Implementation | **Reference**: [High-Priority Enhancement Checklist](High_Priority_Enhancement_Checklist.md)
+
+#### Critical Infrastructure
+- [x] Test framework improvements (warning cleanup)
+- [x] Markdown import security hardening (XSS prevention)
+
+#### Advanced Financial Metrics
+- [x] IRR/NPV helpers implemented; Payback Period pending UI integration
+- [ ] Amortization schedule export (CSV/Markdown)
+
+#### Scenario Management
+- [ ] Named scenario save/load system
+- [ ] Side-by-side scenario comparison
+- [x] Sensitivity tornado chart scaffold; real recomputation pending
+
+#### Testing Infrastructure
+- [ ] Visual regression testing with Playwright
+- [ ] CI/CD integration for automated testing
+
+### 11.2 Phase 2 Enhancements (Medium Priority)
+- Multi-property portfolio analysis
+- Advanced tax calculation options (depreciation, MACRS)
 - Market data integration
-- Scenario analysis (best/worst case)
+- Multi-currency and internationalization support
 
-### 11.2 Phase 3 Enhancements
+### 11.3 Phase 3 Enhancements (Future)
 - PDF export functionality
 - Integration with real estate APIs
 - Advanced analytics and reporting

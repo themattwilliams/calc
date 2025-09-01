@@ -278,7 +278,7 @@
                 <p><strong>Purpose:</strong> Enterprise-level validation of all features including financial calculations, UI interactions, accessibility, and performance</p>
                 <p><strong>Framework:</strong> Lightweight vanilla JavaScript testing (no external dependencies)</p>
                 <p><strong>Coverage:</strong> Financial calculations, input validation, UI enhancements, markdown export/import, temporary financing, property tax dual input, print functionality, button hover effects, performance benchmarks, accessibility compliance, financial accuracy validation, and comprehensive workflow integration</p>
-                <p><strong>Test Categories:</strong> 14 comprehensive categories with 350+ individual tests covering all functionality including edge cases, international markets, stress testing, accessibility compliance, and financial precision validation</p>
+                <p><strong>Test Categories:</strong> 15 comprehensive categories with 375+ individual tests covering all functionality including edge cases, international markets, stress testing, accessibility compliance, financial precision validation, and security hardening</p>
             </div>
 
             <div class="test-controls">
@@ -297,6 +297,7 @@
                 <button id="run-fuzz-tests" class="btn secondary">🎲 Random/Fuzz Testing</button>
                 <button id="run-accessibility-tests" class="btn secondary">♿ Accessibility</button>
                 <button id="run-financial-accuracy-tests" class="btn secondary">💰 Financial Accuracy</button>
+                <button id="run-security-tests" class="btn secondary">🔒 Markdown Security</button>
                 <button id="clear-results" class="btn danger">🗑️ Clear Results</button>
                 <a href="index.html" class="btn secondary">🏠 Back to App</a>
             </div>
@@ -311,6 +312,9 @@
 
     <!-- Test Framework -->
             <script src="js/test-framework.js?v=2024g"></script>
+    
+    <!-- Security Functions for Testing -->
+    <script src="js/security-utils.js?v=2024j"></script>
     
     <!-- Load actual calculator functions for testing -->
     <script src="js/calculator.js?v=2024g"></script>
@@ -331,6 +335,11 @@
     <script src="tests/random-fuzz-testing.js?v=2024g"></script>
     <script src="tests/accessibility-tests.js"></script>
     <script src="tests/financial-accuracy-tests.js"></script>
+    <script src="tests/npv-irr-unit-tests.js"></script>
+    <script src="tests/chart-rendering-tests.js"></script>
+    <script src="tests/chart-export-tests.js"></script>
+    <script src="tests/markdown-security-tests.js"></script>
+
     
     <!-- Test Runner Logic -->
     <script>
@@ -350,6 +359,7 @@
             const runFuzzBtn = document.getElementById('run-fuzz-tests');
             const runAccessibilityBtn = document.getElementById('run-accessibility-tests');
             const runFinancialAccuracyBtn = document.getElementById('run-financial-accuracy-tests');
+            const runSecurityBtn = document.getElementById('run-security-tests');
             const clearResultsBtn = document.getElementById('clear-results');
             const resultsContainer = document.getElementById('test-results');
             
@@ -442,10 +452,14 @@
                 runTestsByCategory('Accessibility');
             });
 
-            runFinancialAccuracyBtn.addEventListener('click', () => {
+                        runFinancialAccuracyBtn.addEventListener('click', () => {
                 runTestsByCategory('Financial Accuracy');
             });
-            
+
+            runSecurityBtn.addEventListener('click', () => {
+                runTestsByCategory('Markdown Import Security');
+            });
+
             clearResultsBtn.addEventListener('click', () => {
                 resultsContainer.innerHTML = `
                     <div class="loading">

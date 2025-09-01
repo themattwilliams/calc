@@ -9,6 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js Plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-waterfall@3"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -304,7 +310,7 @@
                         <div class="space-y-4">
                             <div>
                                 <label for="purchasePrice" class="block text-gray-400">Purchase Price *</label>
-                                <input type="number" id="purchasePrice" value="275000" min="1000" max="50000000" 
+                                <input type="number" id="purchasePrice" value="325000" min="1000" max="50000000" 
                                        class="mt-1 block w-full bg-gray-900 text-gray-200 border-gray-600 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
                                 <div class="error-message" id="purchasePrice-error"></div>
                             </div>
@@ -595,6 +601,7 @@
                                 
                                 <!-- Calculated Display -->
                                 <div class="text-calculation mt-2" id="propertyTaxCalculation"></div>
+                                <div class="text-calculation" id="annualizedTaxRate"></div>
                                 <div class="error-message" id="propertyTax-error"></div>
                             </div>
                             <div>
@@ -752,16 +759,99 @@
                 <h2 class="text-2xl font-semibold mb-6">30-Year Financial Projections</h2>
                 <div class="space-y-8">
                     <div class="chart-container">
-                        <h4 class="text-center font-medium mb-2 text-gray-200">Income, Expenses & Cash Flow</h4>
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="text-center font-medium text-gray-200">Income, Expenses & Cash Flow</h4>
+                            <div class="flex gap-2 no-print">
+                                <button id="resetIncomeZoom" class="btn-quick-entry">Reset Zoom</button>
+                                <button id="exportIncomePng" class="btn-quick-entry">Export PNG</button>
+                                <button id="exportIncomeCsv" class="btn-quick-entry">Export CSV</button>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-2">Purpose: shows how annual income and expenses evolve and the resulting annual cash flow. Variables: Income (rents, growth), Expenses (taxes, insurance, management, utilities, HOA), Cash Flow = Income − Expenses − Debt Service.</p>
                         <canvas id="incomeExpensesChart"></canvas>
                     </div>
                     <div class="chart-container">
-                        <h4 class="text-center font-medium mb-2 text-gray-200">Equity & Property Value</h4>
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="text-center font-medium text-gray-200">Equity & Property Value</h4>
+                            <div class="flex gap-2 no-print">
+                                <button id="resetEquityZoom" class="btn-quick-entry">Reset Zoom</button>
+                                <button id="exportEquityPng" class="btn-quick-entry">Export PNG</button>
+                                <button id="exportEquityCsv" class="btn-quick-entry">Export CSV</button>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-2">Purpose: tracks wealth creation. Variables: Property Value (appreciation), Loan Balance (amortization), Equity = Value − Balance.</p>
                         <canvas id="equityValueChart"></canvas>
                     </div>
                     <div class="chart-container">
-                        <h4 class="text-center font-medium mb-2 text-gray-200">Loan Principal vs. Interest</h4>
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="text-center font-medium text-gray-200">Loan Principal vs. Interest</h4>
+                            <div class="flex gap-2 no-print">
+                                <button id="resetAmortZoom" class="btn-quick-entry">Reset Zoom</button>
+                                <button id="exportAmortPng" class="btn-quick-entry">Export PNG</button>
+                                <button id="exportAmortCsv" class="btn-quick-entry">Export CSV</button>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-2">Purpose: decomposes debt service into interest and principal over time. Variables: Interest payment, Principal payment per year.</p>
                         <canvas id="amortizationChart"></canvas>
+                    </div>
+                    <!-- Advanced Analytics -->
+                    <div class="chart-container">
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="text-center font-medium text-gray-200">Return Decomposition (Equity Build)</h4>
+                            <div class="flex gap-2 no-print">
+                                <button id="resetReturnDecompZoom" class="btn-quick-entry">Reset Zoom</button>
+                                <button id="exportReturnDecompPng" class="btn-quick-entry">Export PNG</button>
+                                <button id="exportReturnDecompCsv" class="btn-quick-entry">Export CSV</button>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-2">Purpose: explains total return by component. Variables: Principal Paydown, Cash Flow, Appreciation per year.</p>
+                        <canvas id="returnDecompositionChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="text-center font-medium text-gray-200">IRR vs. Hold Period</h4>
+                            <div class="flex gap-2 no-print">
+                                <button id="resetIrrCurveZoom" class="btn-quick-entry">Reset Zoom</button>
+                                <button id="exportIrrCurvePng" class="btn-quick-entry">Export PNG</button>
+                                <button id="exportIrrCurveCsv" class="btn-quick-entry">Export CSV</button>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-2">Purpose: indicates optimal hold/refi timing. Variable: IRR computed from cash flows through each year.</p>
+                        <canvas id="irrCurveChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="text-center font-medium text-gray-200">Debt Yield & LTV Over Time</h4>
+                            <div class="flex gap-2 no-print">
+                                <button id="resetDebtLtvZoom" class="btn-quick-entry">Reset Zoom</button>
+                                <button id="exportDebtLtvPng" class="btn-quick-entry">Export PNG</button>
+                                <button id="exportDebtLtvCsv" class="btn-quick-entry">Export CSV</button>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-2">Purpose: readiness for refinance. Variables: Debt Yield = NOI / Loan, LTV = Balance / Value. Annotation at LTV 75%.</p>
+                        <canvas id="debtLtvChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="text-center font-medium text-gray-200">Tornado Sensitivity (Cash Flow / IRR)</h4>
+                            <div class="flex gap-2 no-print">
+                                <button id="exportTornadoPng" class="btn-quick-entry">Export PNG</button>
+                                <button id="exportTornadoCsv" class="btn-quick-entry">Export CSV</button>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-2">Purpose: shows which assumptions drive outcomes. Variables/Drivers: Rent, Taxes, Insurance, Management, Rate (±10% recomputation for Year 1 CF, 10-year IRR).</p>
+                        <canvas id="tornadoChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="text-center font-medium text-gray-200">BRRRR Refi Proceeds vs Cash Left (Waterfall)</h4>
+                            <div class="flex gap-2 no-print">
+                                <button id="exportWaterfallPng" class="btn-quick-entry">Export PNG</button>
+                                <button id="exportWaterfallCsv" class="btn-quick-entry">Export CSV</button>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-2">Purpose: illustrates refi payback. Variables: Refi Proceeds, Points, Fees, Cash Returned after costs.</p>
+                        <canvas id="brrrWaterfallChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -808,6 +898,7 @@
     <!-- Load Calculator Functions -->
     <script src="js/calculator.js"></script>
     <script src="js/temporary-financing.js"></script>
+    <script src="js/security-utils.js"></script>
     
     <!-- Load UI Controller -->
     <script src="js/ui-controller.js"></script>

@@ -43,7 +43,11 @@ test.describe('Load from Markdown Functionality', () => {
 
     // Fill all fields
     for (const [field, value] of Object.entries(testData)) {
-      await page.fill(`#${field}`, value);
+      if (field === 'amortizedOver') {
+        await page.selectOption(`#${field}`, value);
+      } else {
+        await page.fill(`#${field}`, value);
+      }
     }
 
     await page.waitForTimeout(1000);
@@ -67,7 +71,7 @@ test.describe('Load from Markdown Functionality', () => {
     expect(fileContent).toContain('123 Test Street, Test City, TS 12345');
     expect(fileContent).toContain('$350,000.00');
     expect(fileContent).toContain('$2,800.00');
-    expect(fileContent).toContain('6.75%');
+    expect(fileContent).toContain('6.750%');
 
     // Step 3: Clear the form
     await page.fill('#propertyAddress', '');
@@ -102,7 +106,7 @@ test.describe('Load from Markdown Functionality', () => {
     expect(await page.inputValue('#otherMonthlyExpenses')).toBe('100');
     expect(await page.inputValue('#annualIncomeGrowth')).toBe('3.5');
     expect(await page.inputValue('#annualExpenseGrowth')).toBe('2.5');
-    expect(await page.inputValue('#annualPropertyValueGrowth')).toBe('4.0');
+    expect(await page.inputValue('#annualPropertyValueGrowth')).toBe('4');
 
     // Step 6: Verify calculations updated after loading
     const totalCostText = await page.locator('#totalCostOfProject').textContent();
@@ -122,7 +126,7 @@ test.describe('Load from Markdown Functionality', () => {
 
     // Set up dialog handler for alert
     page.on('dialog', async dialog => {
-      expect(dialog.message()).toContain('Unable to parse the markdown file');
+      expect(dialog.message()).toContain('File validation failed');
       await dialog.accept();
     });
 

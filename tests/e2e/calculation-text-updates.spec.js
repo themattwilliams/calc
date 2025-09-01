@@ -26,7 +26,7 @@ test.describe('Calculation Text Updates', () => {
     const closingCostsText = await page.locator('#closingCostsText').textContent();
     
     // 6000 / 185000 * 100 = 3.24%
-    expect(closingCostsText).toContain('3.2%');
+    expect(closingCostsText).toContain('3.243%');
     expect(closingCostsText).toContain('of purchase price');
   });
 
@@ -62,7 +62,7 @@ test.describe('Calculation Text Updates', () => {
     const taxRateText = await page.locator('#annualizedTaxRate').textContent();
     
     // (200 * 12) / 185000 * 100 = 1.297% ≈ 1.3%
-    expect(taxRateText).toContain('1.3%');
+    expect(taxRateText).toContain('1.297%');
     expect(taxRateText).toContain('Annualized tax rate');
   });
 
@@ -133,7 +133,7 @@ test.describe('Calculation Text Updates', () => {
     
     // Should use absolute value for calculation
     const taxRateText = await page.locator('#annualizedTaxRate').textContent();
-    expect(taxRateText).toContain('1.3%'); // Should still calculate correctly with absolute value
+    expect(taxRateText).toContain('1.297%'); // Should still calculate correctly with absolute value
   });
 
   test('All calculation texts are present on page load', async ({ page }) => {

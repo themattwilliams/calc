@@ -368,15 +368,35 @@ CalculationResults = {
 
 ---
 
-## 9. Future Enhancements (Out of Scope)
+## 9. Future Enhancements
 
-- Multi-property comparison
-- Data export to Excel/PDF
-- Advanced tax calculations
+### 9.1 Next Phase Development (High Priority)
+**Reference**: [High-Priority Enhancement Checklist](High_Priority_Enhancement_Checklist.md)
+
+#### Immediate Implementation
+- [x] Test framework code quality improvements
+- [x] Markdown import security hardening (XSS prevention)
+- [x] IRR/NPV helpers (Payback Period pending)
+- [ ] Amortization schedule export functionality
+- [ ] Named scenario management system
+- [ ] Sensitivity analysis with tornado charts
+- [ ] Visual regression testing infrastructure
+- [ ] CI/CD integration for automated testing
+
+### 9.2 Medium-Term Enhancements
+- Multi-property comparison and portfolio analysis
+- Advanced tax calculations (depreciation, MACRS)
 - Market data integration
-- Scenario analysis tools
+- Multi-currency and locale support
+- Performance optimization and Web Workers
+- Enhanced mobile responsiveness
+
+### 9.3 Long-Term Enhancements (Out of Current Scope)
 - Backend data persistence
 - User account management
+- Real-time market data feeds
+- Advanced analytics dashboard
+- Third-party API integrations
 
 ---
 

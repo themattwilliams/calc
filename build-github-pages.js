@@ -14,6 +14,7 @@ const filesToCopy = [
     'js/calculator.js',
     'js/ui-controller.js',
     'js/temporary-financing.js',
+    'js/security-utils.js',
     'assets/favicon.ico'
 ];
 

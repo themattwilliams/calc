@@ -40,6 +40,44 @@ function calculateMortgagePayment(principal, annualRate, years) {
     
     return Math.round(payment * 100) / 100; // Round to 2 decimal places
 }
+/**
+ * Generates a full amortization schedule with optional extra payments
+ * @param {number} loanAmount
+ * @param {number} annualRate - decimal (e.g., 0.06)
+ * @param {number} years
+ * @param {object} options - { extraMonthlyPrincipal?: number, lumpSumPayments?: Record<monthIndex, number> }
+ * @returns {Array<{month:number, payment:number, interest:number, principal:number, extraPrincipal:number, balance:number}>}
+ */
+function generateAmortizationSchedule(loanAmount, annualRate, years, options = {}) {
+    const schedule = [];
+    const n = Math.max(1, Math.floor(years * 12));
+    const monthlyRate = (annualRate || 0) / 12;
+    const extraMonthly = Math.max(0, options.extraMonthlyPrincipal || 0);
+    const lump = options.lumpSumPayments || {};
+
+    const basePayment = monthlyRate === 0
+        ? loanAmount / n
+        : loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
+
+    let balance = loanAmount;
+    for (let month = 1; month <= n && balance > 0.01; month++) {
+        const interest = monthlyRate === 0 ? 0 : balance * monthlyRate;
+        let principal = basePayment - interest;
+        let extra = extraMonthly;
+        if (lump[month]) extra += Math.max(0, lump[month]);
+
+        // Cap final payment to avoid negative balance due to rounding
+        if (principal + extra > balance) {
+            principal = balance;
+            extra = 0;
+        }
+
+        const payment = principal + interest + extra;
+        balance = Math.max(0, balance - principal - extra);
+        schedule.push({ month, payment, interest: Math.round(interest * 100) / 100, principal: Math.round(principal * 100) / 100, extraPrincipal: Math.round(extra * 100) / 100, balance: Math.round(balance * 100) / 100 });
+    }
+    return schedule;
+}
 
 /**
  * Calculates remaining loan balance at a specific point in time
@@ -283,6 +321,7 @@ function generate30YearProjections(inputs) {
         const annualCashFlow = currentAnnualIncome - currentAnnualExpenses - (monthlyPayment * 12);
         const equity = currentPropertyValue - remainingBalance;
         
+        const appreciation = currentPropertyValue - (year === 1 ? purchasePrice : projections[year - 2].propertyValue);
         projections.push({
             year,
             annualIncome: currentAnnualIncome,
@@ -292,11 +331,84 @@ function generate30YearProjections(inputs) {
             loanBalance: remainingBalance,
             equity,
             principalPayment: annualPrincipalPayment,
-            interestPayment: annualInterestPayment
+            interestPayment: annualInterestPayment,
+            appreciation
         });
     }
     
     return projections;
+}
+
+// ========================================
+// DISCOUNTED CASH FLOW HELPERS (NPV / IRR)
+// ========================================
+
+/**
+ * Calculates Net Present Value (NPV) for a series of cashflows
+ * @param {number} discountRate - Discount rate as decimal (e.g., 0.1 for 10%)
+ * @param {number[]} cashflows - Array of cashflows [CF0, CF1, ... CFN]
+ * @returns {number} NPV value
+ */
+function calculateNPV(discountRate, cashflows) {
+    if (!Array.isArray(cashflows) || cashflows.length === 0) return 0;
+    const r = 1 + (discountRate || 0);
+    return cashflows.reduce((sum, cf, t) => sum + (cf / Math.pow(r, t)), 0);
+}
+
+/**
+ * Calculates Internal Rate of Return (IRR) via secant method with fallbacks
+ * @param {number[]} cashflows - Array of cashflows [CF0, CF1, ... CFN]
+ * @param {number} guess - Initial guess (decimal), default 0.1
+ * @returns {number} IRR as decimal, or NaN if not found
+ */
+function calculateIRR(cashflows, guess = 0.1) {
+    if (!Array.isArray(cashflows) || cashflows.length < 2) return NaN;
+    // Secant method
+    let r0 = guess;
+    let r1 = guess + 0.05;
+    const maxIter = 100;
+    const tol = 1e-7;
+
+    const npv = (rate) => calculateNPV(rate, cashflows);
+
+    for (let i = 0; i < maxIter; i++) {
+        const f0 = npv(r0);
+        const f1 = npv(r1);
+        const denom = (f1 - f0);
+        if (Math.abs(denom) < 1e-12) break;
+        const r2 = r1 - f1 * (r1 - r0) / denom;
+        if (!isFinite(r2)) break;
+        if (Math.abs(r2 - r1) < tol) return r2;
+        r0 = r1;
+        r1 = r2;
+    }
+
+    // Fallback: bisection over a reasonable range [-0.99, 1.0]
+    let lo = -0.99;
+    let hi = 1.0;
+    let nlo = npv(lo);
+    let nhi = npv(hi);
+    if (isNaN(nlo) || isNaN(nhi)) return NaN;
+    // Ensure sign change; if not, try expanding hi
+    if (nlo * nhi > 0) {
+        for (let h = 1.5; h <= 10; h += 0.5) {
+            hi = h;
+            nhi = npv(hi);
+            if (nlo * nhi <= 0) break;
+        }
+        if (nlo * nhi > 0) return NaN;
+    }
+    for (let i = 0; i < 100; i++) {
+        const mid = (lo + hi) / 2;
+        const nmid = npv(mid);
+        if (Math.abs(nmid) < tol) return mid;
+        if (nlo * nmid <= 0) {
+            hi = mid; nhi = nmid;
+        } else {
+            lo = mid; nlo = nmid;
+        }
+    }
+    return (lo + hi) / 2;
 }
 
 // ========================================
@@ -443,8 +555,11 @@ if (typeof window !== 'undefined') {
         calculateManagementFee,
         calculateTotalMonthlyExpenses,
         calculateMonthlyCashFlow,
+        generateAmortizationSchedule,
         applyCompoundGrowth,
         generate30YearProjections,
+        calculateNPV,
+        calculateIRR,
         validatePurchasePrice,
         validateDownPayment,
         validateInterestRate,
@@ -474,8 +589,11 @@ if (typeof module !== 'undefined' && module.exports) {
         calculateManagementFee,
         calculateTotalMonthlyExpenses,
         calculateMonthlyCashFlow,
+        generateAmortizationSchedule,
         applyCompoundGrowth,
         generate30YearProjections,
+        calculateNPV,
+        calculateIRR,
         validatePurchasePrice,
         validateDownPayment,
         validateInterestRate,

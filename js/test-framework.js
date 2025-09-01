@@ -152,6 +152,15 @@ const TestFramework = {
                     throw new Error(`Expected ${actual} to be greater than or equal to ${expected}`);
                 }
                 return passed;
+            },
+            
+            toHaveLength: (expected) => {
+                const length = actual ? actual.length : 0;
+                const passed = length === expected;
+                if (!passed) {
+                    throw new Error(`Expected array/string to have length ${expected} but got ${length}`);
+                }
+                return passed;
             }
         };
         
