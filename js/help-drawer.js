@@ -109,7 +109,7 @@
       });
     }
 
-    // focus sync minimal
+    // focus/hover sync
     function resolveIdFromElement(el){
       if(!el) return null;
       const attr = el.getAttribute && el.getAttribute('data-help-id');
@@ -119,6 +119,24 @@
       return null;
     }
     document.addEventListener('focusin', (e)=>{ const id = resolveIdFromElement(e.target); if(id){ if(drawer && drawer.hidden) open(); setHelpById(id); visited.add(id); updateProgress(); } });
+
+    // Hover-driven updates (debounced) when user moves over inputs/controls
+    let hoverTimer = null;
+    document.addEventListener('mouseover', (e)=>{
+      // Ignore events originating from inside the drawer itself
+      if(drawer && drawer.contains(e.target)) return;
+      const target = e.target.closest && e.target.closest('[data-help-id], input, select, textarea');
+      if(!target) return;
+      const id = resolveIdFromElement(target);
+      if(!id) return;
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(()=>{
+        if(drawer && drawer.hidden) open();
+        setHelpById(id);
+        visited.add(id);
+        updateProgress();
+      }, 150);
+    }, true);
 
     // simple scroll sync using IntersectionObserver on key fields
     if('IntersectionObserver' in window){
