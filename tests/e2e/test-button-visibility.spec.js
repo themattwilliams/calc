@@ -1,18 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 async function ensureAppLoaded(page){
-  const attempts = ['/', '/index.html', 'index.html'];
-  for (const path of attempts){
-    try {
-      await page.goto(path);
-      await page.locator('.test-runner-link').waitFor({ state: 'attached', timeout: 5000 });
-      return true;
-    } catch (_) {
-      // try next
-    }
-  }
-  test.skip();
-  return false;
+  await page.goto('/');
+  await page.locator('.test-runner-link').waitFor({ state: 'attached', timeout: 10000 });
 }
 
 // Validate the presence and placement of the Tests button in the app
