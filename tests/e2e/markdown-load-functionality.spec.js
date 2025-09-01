@@ -87,8 +87,7 @@ test.describe('Load from Markdown Functionality', () => {
 
     // Step 4: Load from the saved markdown file
     await page.setInputFiles('#markdownFileInput', downloadPath);
-    
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => document.getElementById('propertyAddress').value.length > 0);
 
     // Step 5: Verify data was loaded correctly
     expect(await page.inputValue('#propertyAddress')).toBe('123 Test Street, Test City, TS 12345');
@@ -251,7 +250,7 @@ Generated on: ${new Date().toLocaleDateString()}
       await page.fill('#monthlyRent', '0');
 
       await page.setInputFiles('#markdownFileInput', downloadPath);
-      await page.waitForTimeout(500);
+      await page.waitForFunction(() => document.getElementById('propertyAddress').value.length > 0);
 
       // Verify
       expect(await page.inputValue('#propertyAddress')).toBe(testData.address);
