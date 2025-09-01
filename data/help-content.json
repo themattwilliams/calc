@@ -34,5 +34,23 @@
     "save": [
       "Rates change—save scenarios as you compare."
     ]
+  },
+  "tempInterestRate": {
+    "title": "Temporary Interest Rate",
+    "tips": [
+      "Used only during temporary financing period.",
+      "Commonly higher than permanent loan rate."
+    ],
+    "examples": [
+      { "label": "Bridge", "value": "12%" },
+      { "label": "Hard money", "value": "10%" }
+    ],
+    "mistakes": [
+      "Using permanent rate here",
+      "Forgetting points/fees (handled elsewhere)"
+    ],
+    "save": [
+      "Save before toggling between temp and permanent financing."
+    ]
   }
 }

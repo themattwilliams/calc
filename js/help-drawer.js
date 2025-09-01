@@ -98,7 +98,14 @@
     }
 
     // focus sync minimal
-    function resolveIdFromElement(el){ if(!el) return null; if(el.id==='purchasePrice') return 'purchase'; if(el.id==='loanInterestRate') return 'loanInterestRate'; return null; }
+    function resolveIdFromElement(el){
+      if(!el) return null;
+      const attr = el.getAttribute && el.getAttribute('data-help-id');
+      if(attr) return attr;
+      if(el.id==='purchasePrice') return 'purchase';
+      if(el.id==='loanInterestRate') return 'loanInterestRate';
+      return null;
+    }
     document.addEventListener('focusin', (e)=>{ const id = resolveIdFromElement(e.target); if(id){ if(drawer && drawer.hidden) open(); setHelpById(id); } });
 
     // simple scroll sync using IntersectionObserver on key fields
