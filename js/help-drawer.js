@@ -58,10 +58,10 @@
       title.textContent = data.title;
       const list = (arr)=>'<ul>'+arr.map(x=>`<li>• ${safe(String(x))}</li>`).join('')+'</ul>';
       panel.innerHTML = `
-        <section id="help-tips"><h3>Tips</h3>${list(data.tips||[])}</section>
-        <section id="help-examples"><h3>Examples</h3>${list((data.examples||[]).map(e=>`${e.label}: ${e.value}`))}</section>
-        <section id="help-mistakes"><h3>Mistakes</h3>${list(data.mistakes||[])}</section>
-        <section id="help-save"><h3>Save</h3>${list(data.save||[])}</section>
+        <section id="help-tips" aria-hidden="false"><h3>Tips</h3>${list(data.tips||[])}</section>
+        <section id="help-examples" aria-hidden="true"><h3>Examples</h3>${list((data.examples||[]).map(e=>`${e.label}: ${e.value}`))}</section>
+        <section id="help-mistakes" aria-hidden="true"><h3>Mistakes</h3>${list(data.mistakes||[])}</section>
+        <section id="help-save" aria-hidden="true"><h3>Save</h3>${list(data.save||[])}</section>
       `;
     }
 
@@ -128,6 +128,13 @@
           tabs.forEach(x=>x.setAttribute('aria-selected','false'));
           t.setAttribute('aria-selected','true');
           setActiveTab(t.textContent.trim().toLowerCase());
+          // toggle panels
+          const controls = ['help-tips','help-examples','help-mistakes','help-save'];
+          controls.forEach(id=>{
+            const sec = document.getElementById(id);
+            if(!sec) return;
+            sec.setAttribute('aria-hidden', t.getAttribute('aria-controls')===id ? 'false' : 'true');
+          });
         });
       });
     }
