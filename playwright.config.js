@@ -25,7 +25,8 @@ module.exports = defineConfig({
     /* Take screenshot on failure */
     screenshot: 'only-on-failure',
     /* Record video on failure */
-    video: 'retain-on-failure'
+    video: 'retain-on-failure',
+    acceptDownloads: true
   },
 
   /* Configure projects for major browsers */
