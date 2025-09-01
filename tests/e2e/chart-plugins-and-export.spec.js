@@ -27,6 +27,12 @@ test.describe('Chart Plugins, Interactions, and Exports', () => {
   });
 
   test('CSV export produces CSV-like content', async ({ page }) => {
+    // seed some inputs to ensure projections are generated
+    await page.fill('#purchasePrice', '200000');
+    await page.fill('#monthlyRent', '1500');
+    await page.fill('#monthlyPropertyTaxes', '200');
+    await page.waitForTimeout(400);
+
     const csv = await page.evaluate(() => {
       const p = (window.projectionData || []).slice(0, 10);
       const rows = ['Year,CashFlow'].concat(p.map(x => `${x.year},${x.annualCashFlow||0}`));
