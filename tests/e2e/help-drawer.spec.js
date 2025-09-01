@@ -50,13 +50,10 @@ test.describe('Help Drawer - E2E', () => {
     await openDrawer(page);
     const search = page.locator('#helpDrawerSearch');
     await search.fill('interest');
-    await page.waitForTimeout(150);
-
-    const anyHighlight = await page.evaluate(() => !!document.querySelector('#helpDrawer mark'));
-    expect(anyHighlight).toBeTruthy();
+    await page.waitForFunction(() => !!document.querySelector('#helpDrawer mark'));
 
     await search.fill('');
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(150);
     const anyHighlightAfter = await page.evaluate(() => !!document.querySelector('#helpDrawer mark'));
     expect(anyHighlightAfter).toBeFalsy();
   });

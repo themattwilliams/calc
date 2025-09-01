@@ -13,9 +13,9 @@ async function goProd(page){
 
 test.describe('GitHub Pages Production Build', () => {
   test.beforeEach(async ({ page }) => {
-    // This will test the built version in docs/
-    await page.goto('http://localhost:8081/index.html');
-    await page.waitForLoadState('networkidle');
+    // Only run these tests when the production server is up
+    const ok = await goProd(page);
+    if (!ok) test.skip();
     await expect(page.locator('#purchasePrice')).toBeVisible();
   });
 
