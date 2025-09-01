@@ -8,7 +8,7 @@
 .help-drawer__tabs{display:flex;gap:8px;padding:8px 12px;border-bottom:1px solid #1f2937}
 .help-drawer__tabs [role=tab]{background:#111827;color:#9ca3af;border:1px solid #374151;border-radius:6px;padding:6px 10px;cursor:pointer}
 .help-drawer__tabs [role=tab][aria-selected=true]{background:#1f2937;color:#e5e7eb}
-.help-drawer__panel{padding:12px;overflow:auto;height:calc(100% - 180px)}
+.help-drawer__panel{padding:12px;overflow:auto;height:calc(100% - 180px);word-wrap:break-word;overflow-wrap:anywhere}
 .help-drawer__panel > section{display:none}
 .help-drawer__panel > section[aria-hidden=false]{display:block}
 .help-drawer__footer{padding:10px 12px;border-top:1px solid #1f2937}

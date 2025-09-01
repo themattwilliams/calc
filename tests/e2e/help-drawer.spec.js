@@ -35,6 +35,10 @@ test.describe('Help Drawer - E2E', () => {
     await expect(page.locator('[role="tab"]:has-text("Examples")')).toBeVisible();
     await expect(page.locator('[role="tab"]:has-text("Mistakes")')).toBeVisible();
     await expect(page.locator('[role="tab"]:has-text("Save")')).toBeVisible();
+
+    // Content exists
+    const contentText = await page.locator('#help-tips').textContent();
+    expect((contentText || '').trim().length > 0).toBeTruthy();
   });
 
   test('Content changes when focusing fields', async ({ page }) => {

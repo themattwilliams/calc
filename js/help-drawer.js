@@ -36,6 +36,13 @@
       drawer.classList.add('open');
       toggle && toggle.setAttribute('aria-expanded','true');
       drawer.focus();
+      // Ensure initial content so drawer isn't empty
+      if(!currentHelpId){
+        const initial = resolveIdFromElement(document.querySelector('[data-help-id]')) || 'purchase';
+        setHelpById(initial);
+        visited.add(initial);
+        updateProgress();
+      }
     }
 
     function close(){
