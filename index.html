@@ -902,5 +902,31 @@
     
     <!-- Load UI Controller -->
     <script src="js/ui-controller.js"></script>
+    <!-- Help Drawer Assets -->
+    <link rel="stylesheet" href="css/help-drawer.css">
+    <script src="js/help-drawer.js"></script>
+    
+    <!-- Help Drawer Markup -->
+    <button id="helpDrawerToggle" aria-controls="helpDrawer" aria-expanded="false" class="hidden" style="position:fixed;left:8px;top:8px;z-index:50;">Help</button>
+    <aside id="helpDrawer" aria-label="Contextual Help" class="help-drawer" hidden>
+        <div class="help-drawer__header">
+            <h2 id="helpDrawerTitle">Help</h2>
+            <button id="helpDrawerClose" aria-label="Close help" class="help-drawer__close">×</button>
+        </div>
+        <div class="help-drawer__search">
+            <input id="helpDrawerSearch" type="search" placeholder="Search help…" aria-label="Search help">
+        </div>
+        <div role="tablist" aria-label="Help tabs" class="help-drawer__tabs">
+            <button role="tab" aria-selected="true">Tips</button>
+            <button role="tab" aria-selected="false">Examples</button>
+            <button role="tab" aria-selected="false">Mistakes</button>
+            <button role="tab" aria-selected="false">Save</button>
+        </div>
+        <div class="help-drawer__panel" role="tabpanel"></div>
+        <div class="help-drawer__footer">
+            <button id="helpCopyExample" class="help-drawer__copy">Copy example</button>
+            <div id="helpToast" role="status" aria-live="polite" class="help-drawer__toast" hidden>Copied</div>
+        </div>
+    </aside>
 </body>
 </html>
