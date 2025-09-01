@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('UI - Tests Button Visibility and Placement', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/index.html');
+    await page.goto('/');
   });
 
   test('Tests button is visible and fixed at top-right', async ({ page }) => {
