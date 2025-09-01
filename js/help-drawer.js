@@ -8,6 +8,8 @@
   const toast = document.getElementById('helpToast');
   const copyBtn = document.getElementById('helpCopyExample');
 
+  let currentHelpId = null;
+
   async function loadContent(){
     if(window.HelpContent) return window.HelpContent;
     try{
@@ -25,6 +27,7 @@
     const map = await loadContent();
     const data = (map||{})[id];
     if(!data || !panel || !title) return;
+    currentHelpId = id;
     const safe = typeof window.sanitizeHTML==='function' ? window.sanitizeHTML : (s)=>s;
     title.textContent = data.title;
     const list = (arr)=>'<ul>'+arr.map(x=>`<li>• ${safe(String(x))}</li>`).join('')+'</ul>';
@@ -41,10 +44,31 @@
   // events
   if(toggle){ toggle.classList.remove('hidden'); toggle.addEventListener('click', open); }
   if(closeBtn){ closeBtn.addEventListener('click', close); }
-  if(copyBtn){ copyBtn.addEventListener('click', ()=>{ try{ navigator.clipboard && navigator.clipboard.writeText(''); }catch(_){} showToast('Copied'); }); }
+  if(copyBtn){
+    copyBtn.addEventListener('click', async ()=>{
+      const map = await loadContent();
+      const examples = (map[currentHelpId]?.examples)||[];
+      const toCopy = examples.length ? String(examples[0].value) : '';
+      try{ if(navigator.clipboard && typeof navigator.clipboard.writeText==='function'){ await navigator.clipboard.writeText(toCopy); } }catch(_){ /* ignore */ }
+      showToast('Copied');
+    });
+  }
 
   // focus sync minimal
   function resolveIdFromElement(el){ if(!el) return null; if(el.id==='purchasePrice') return 'purchase'; if(el.id==='loanInterestRate') return 'loanInterestRate'; return null; }
+  document.addEventListener('focusin', (e)=>{ const id = resolveIdFromElement(e.target); if(id){ if(drawer && drawer.hidden) open(); setHelpById(id); } });
+
+  // simple scroll sync using IntersectionObserver on key fields
+  if('IntersectionObserver' in window){
+    const targets = [document.getElementById('purchasePrice'), document.getElementById('loanInterestRate')].filter(Boolean);
+    if(targets.length){
+      const io = new IntersectionObserver((entries)=>{
+        const visible = entries.filter(en=>en.isIntersecting).sort((a,b)=>b.intersectionRatio - a.intersectionRatio)[0];
+        if(visible && visible.target){ const id = resolveIdFromElement(visible.target); if(id){ setHelpById(id); } }
+      }, { root: null, threshold: [0.5, 0.75] });
+      targets.forEach(t=>io.observe(t));
+    }
+  }
 
   // basic tabs
   const tabs = drawer ? drawer.querySelectorAll('[role=tab]') : [];
@@ -70,7 +94,6 @@
       nodes.forEach(n=>{ const t=n.nodeValue; if(t && t.toLowerCase().includes(q)){ const i=t.toLowerCase().indexOf(q); const before=t.slice(0,i); const hit=t.slice(i,i+q.length); const after=t.slice(i+q.length); const frag=document.createDocumentFragment(); if(before) frag.appendChild(document.createTextNode(before)); const mk=document.createElement('mark'); mk.textContent=hit; frag.appendChild(mk); if(after) frag.appendChild(document.createTextNode(after)); n.parentNode.replaceChild(frag, n); } });
     });
   }
-  document.addEventListener('focusin', (e)=>{ const id = resolveIdFromElement(e.target); if(id){ if(drawer && drawer.hidden) open(); setHelpById(id); } });
 
   // expose minimal API for unit tests
   window.HelpDrawer = { open, close, setActiveTab, setHelpById };
