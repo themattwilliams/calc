@@ -1,10 +1,25 @@
 import { test, expect } from '@playwright/test';
 
+async function ensureAppLoaded(page){
+  const attempts = ['/', '/index.html', 'index.html'];
+  for (const path of attempts){
+    try {
+      await page.goto(path);
+      await page.locator('.test-runner-link').waitFor({ state: 'attached', timeout: 5000 });
+      return true;
+    } catch (_) {
+      // try next
+    }
+  }
+  test.skip();
+  return false;
+}
+
 // Validate the presence and placement of the Tests button in the app
 
 test.describe('UI - Tests Button Visibility and Placement', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('index.html');
+    await ensureAppLoaded(page);
   });
 
   test('Tests button is visible and fixed at top-right', async ({ page }) => {

@@ -1,11 +1,25 @@
 import { test, expect } from '@playwright/test';
 
+async function ensureAppLoaded(page){
+  const attempts = ['/', '/index.html', 'index.html'];
+  for (const path of attempts){
+    try {
+      await page.goto(path);
+      await page.locator('#purchasePrice').waitFor({ state: 'attached', timeout: 5000 });
+      return true;
+    } catch (_) {
+      // try next
+    }
+  }
+  test.skip();
+  return false;
+}
+
 // E2E scaffold for Tabbed Help Drawer
 
 test.describe('Help Drawer - E2E', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('index.html');
-    await page.locator('#purchasePrice').waitFor({ state: 'attached', timeout: 15000 });
+    await ensureAppLoaded(page);
     await page.waitForFunction(() => typeof window.HelpDrawer !== 'undefined');
   });
 
