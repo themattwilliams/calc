@@ -27,7 +27,7 @@ test.describe('Help Drawer - E2E', () => {
     const title1 = await page.locator('#helpDrawerTitle').textContent();
     expect(typeof title1).toBe('string');
 
-    await page.focus('#interestRate');
+    await page.focus('#loanInterestRate');
     await page.waitForTimeout(150);
     const title2 = await page.locator('#helpDrawerTitle').textContent();
     expect(typeof title2).toBe('string');

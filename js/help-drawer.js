@@ -20,8 +20,9 @@
     }catch(_){ window.HelpContent = {}; return {}; }
   }
 
-  function open(){ if(!drawer) return; drawer.hidden=false; drawer.classList.add('open'); toggle && toggle.setAttribute('aria-expanded','true'); }
-  function close(){ if(!drawer) return; drawer.classList.remove('open'); setTimeout(()=>{drawer.hidden=true;},200); toggle && toggle.setAttribute('aria-expanded','false'); }
+  let lastFocus = null;
+  function open(){ if(!drawer) return; lastFocus = document.activeElement; drawer.hidden=false; drawer.classList.add('open'); toggle && toggle.setAttribute('aria-expanded','true'); drawer.focus(); }
+  function close(){ if(!drawer) return; drawer.classList.remove('open'); setTimeout(()=>{drawer.hidden=true; if(lastFocus && typeof lastFocus.focus==='function'){ lastFocus.focus(); }},200); toggle && toggle.setAttribute('aria-expanded','false'); }
   function setActiveTab(name){ /* placeholder for unit test presence */ }
   async function setHelpById(id){
     const map = await loadContent();
@@ -44,6 +45,7 @@
   // events
   if(toggle){ toggle.classList.remove('hidden'); toggle.addEventListener('click', open); }
   if(closeBtn){ closeBtn.addEventListener('click', close); }
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && !drawer.hidden){ e.stopPropagation(); close(); } });
   if(copyBtn){
     copyBtn.addEventListener('click', async ()=>{
       const map = await loadContent();
