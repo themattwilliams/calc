@@ -6,6 +6,7 @@
     const title = document.getElementById('helpDrawerTitle');
     const search = document.getElementById('helpDrawerSearch');
     const panel = drawer ? drawer.querySelector('.help-drawer__panel') : null;
+    const progress = document.getElementById('helpProgress');
     const toast = document.getElementById('helpToast');
     const copyBtn = document.getElementById('helpCopyExample');
 
@@ -67,6 +68,10 @@
 
     function showToast(msg){ if(!toast) return; toast.textContent = msg||'Copied'; toast.hidden=false; setTimeout(()=>{toast.hidden=true;}, 1500); }
 
+    // progress indicator (visited sections)
+    const visited = new Set();
+    function updateProgress(){ if(!progress) return; const arr = Array.from(visited); progress.textContent = arr.length ? `Visited: ${arr.join(', ')}` : ''; }
+
     // events
     if(toggle){ toggle.classList.remove('hidden'); toggle.addEventListener('click', open); }
     if(closeBtn){ closeBtn.addEventListener('click', close); }
@@ -106,7 +111,7 @@
       if(el.id==='loanInterestRate') return 'loanInterestRate';
       return null;
     }
-    document.addEventListener('focusin', (e)=>{ const id = resolveIdFromElement(e.target); if(id){ if(drawer && drawer.hidden) open(); setHelpById(id); } });
+    document.addEventListener('focusin', (e)=>{ const id = resolveIdFromElement(e.target); if(id){ if(drawer && drawer.hidden) open(); setHelpById(id); visited.add(id); updateProgress(); } });
 
     // simple scroll sync using IntersectionObserver on key fields
     if('IntersectionObserver' in window){
@@ -114,7 +119,7 @@
       if(targets.length){
         const io = new IntersectionObserver((entries)=>{
           const visible = entries.filter(en=>en.isIntersecting).sort((a,b)=>b.intersectionRatio - a.intersectionRatio)[0];
-          if(visible && visible.target){ const id = resolveIdFromElement(visible.target); if(id){ setHelpById(id); } }
+          if(visible && visible.target){ const id = resolveIdFromElement(visible.target); if(id){ setHelpById(id); visited.add(id); updateProgress(); } }
         }, { root: null, threshold: [0.5, 0.75] });
         targets.forEach(t=>io.observe(t));
       }
