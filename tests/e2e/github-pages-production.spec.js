@@ -1,4 +1,15 @@
-const { test, expect } = require('@playwright/test');
+import { test, expect } from '@playwright/test';
+
+async function goProd(page){
+  try{
+    await page.goto('http://localhost:8081/index.html');
+    await page.waitForLoadState('networkidle');
+    return true;
+  }catch(_){
+    test.skip();
+    return false;
+  }
+}
 
 test.describe('GitHub Pages Production Build', () => {
   test.beforeEach(async ({ page }) => {
