@@ -2,6 +2,14 @@ const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 
+async function waitForFile(filePath, tries = 50, intervalMs = 100) {
+  for (let i = 0; i < tries; i++) {
+    if (fs.existsSync(filePath)) return true;
+    await new Promise(r => setTimeout(r, intervalMs));
+  }
+  return false;
+}
+
 test.describe('Markdown Save & Load Workflow', () => {
   let downloadsPath;
 
@@ -97,6 +105,7 @@ test.describe('Markdown Save & Load Workflow', () => {
       // Save the downloaded file
       const downloadPath = path.join(downloadsPath, download.suggestedFilename());
       await download.saveAs(downloadPath);
+      await waitForFile(downloadPath);
 
       // Verify file exists and has content
       expect(fs.existsSync(downloadPath)).toBe(true);
@@ -124,6 +133,7 @@ test.describe('Markdown Save & Load Workflow', () => {
 
       // Load the markdown file
       await page.setInputFiles('#markdownFileInput', downloadPath);
+      await page.waitForFunction(() => document.getElementById('propertyAddress').value !== undefined);
 
       // Wait for load processing
       await page.waitForTimeout(1000);
@@ -207,6 +217,7 @@ test.describe('Markdown Save & Load Workflow', () => {
 
       const downloadPath = path.join(downloadsPath, download.suggestedFilename());
       await download.saveAs(downloadPath);
+      await waitForFile(downloadPath);
 
       const fileContent = fs.readFileSync(downloadPath, 'utf8');
       expect(fileContent).toContain('Beverly Hills');
@@ -218,6 +229,7 @@ test.describe('Markdown Save & Load Workflow', () => {
       await page.waitForLoadState('networkidle');
 
       await page.setInputFiles('#markdownFileInput', downloadPath);
+      await page.waitForFunction(() => document.getElementById('propertyAddress').value !== undefined);
       await page.waitForTimeout(1000);
 
       // Verify luxury data loaded correctly
@@ -293,11 +305,13 @@ test.describe('Markdown Save & Load Workflow', () => {
 
       const downloadPath = path.join(downloadsPath, download.suggestedFilename());
       await download.saveAs(downloadPath);
+      await waitForFile(downloadPath);
 
       await page.reload();
       await page.waitForLoadState('networkidle');
 
       await page.setInputFiles('#markdownFileInput', downloadPath);
+      await page.waitForFunction(() => document.getElementById('propertyAddress').value !== undefined);
       await page.waitForTimeout(1000);
 
       // Verify all budget data loaded
@@ -359,6 +373,7 @@ test.describe('Markdown Save & Load Workflow', () => {
 
       const downloadPath = path.join(downloadsPath, download.suggestedFilename());
       await download.saveAs(downloadPath);
+      await waitForFile(downloadPath);
 
       const fileContent = fs.readFileSync(downloadPath, 'utf8');
       expect(fileContent).toContain('$0');
@@ -368,6 +383,7 @@ test.describe('Markdown Save & Load Workflow', () => {
       await page.waitForLoadState('networkidle');
 
       await page.setInputFiles('#markdownFileInput', downloadPath);
+      await page.waitForFunction(() => document.getElementById('propertyAddress').value !== undefined);
       await page.waitForTimeout(500);
 
       // Verify zeros loaded correctly
@@ -423,6 +439,7 @@ test.describe('Markdown Save & Load Workflow', () => {
 
       const downloadPath = path.join(downloadsPath, download.suggestedFilename());
       await download.saveAs(downloadPath);
+      await waitForFile(downloadPath);
 
       const fileContent = fs.readFileSync(downloadPath, 'utf8');
       expect(fileContent).toContain('$50,000,000');
@@ -432,6 +449,7 @@ test.describe('Markdown Save & Load Workflow', () => {
       await page.waitForLoadState('networkidle');
 
       await page.setInputFiles('#markdownFileInput', downloadPath);
+      await page.waitForFunction(() => document.getElementById('propertyAddress').value !== undefined);
       await page.waitForTimeout(1000);
 
       // Verify large values loaded correctly
@@ -489,13 +507,14 @@ test.describe('Markdown Save & Load Workflow', () => {
       const invalidPath = path.join(downloadsPath, 'invalid.md');
       fs.writeFileSync(invalidPath, 'This is not a valid property analysis file');
 
+      const purchasePriceBefore = await page.inputValue('#purchasePrice');
       // Try to load invalid file
       await page.setInputFiles('#markdownFileInput', invalidPath);
       await page.waitForTimeout(500);
 
-      // Verify form values remain unchanged or show defaults
-      const purchasePrice = await page.inputValue('#purchasePrice');
-      expect(purchasePrice).toBe('275000'); // Should remain at original value
+      // Verify form value remains unchanged
+      const purchasePriceAfter = await page.inputValue('#purchasePrice');
+      expect(purchasePriceAfter).toBe(purchasePriceBefore);
 
       // Check if error notification appears (if implemented)
       const notifications = await page.locator('.notification, .error, .alert').count();
@@ -538,6 +557,7 @@ test.describe('Markdown Save & Load Workflow', () => {
 
         const downloadPath = path.join(downloadsPath, `iteration_${i + 1}.md`);
         await download.saveAs(downloadPath);
+        await waitForFile(downloadPath);
 
         // Clear form
         await page.reload();
@@ -545,7 +565,7 @@ test.describe('Markdown Save & Load Workflow', () => {
 
         // Load back
         await page.setInputFiles('#markdownFileInput', downloadPath);
-        await page.waitForTimeout(500);
+        await page.waitForFunction(() => document.getElementById('propertyAddress').value.length > 0);
 
         // Verify data
         const loadedAddress = await page.inputValue('#propertyAddress');
