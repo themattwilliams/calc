@@ -911,7 +911,6 @@
     <aside id="helpDrawer" role="dialog" aria-modal="true" aria-label="Contextual Help" class="help-drawer" hidden tabindex="-1">
         <div class="help-drawer__header">
             <h2 id="helpDrawerTitle">Help</h2>
-            <div id="helpProgress" class="help-drawer__progress" aria-label="Section progress"></div>
             <button id="helpDrawerClose" aria-label="Close help" class="help-drawer__close">×</button>
         </div>
         <div class="help-drawer__search">
@@ -923,6 +922,7 @@
             <button id="helpTabMistakes" role="tab" aria-selected="false" aria-controls="help-mistakes">Mistakes</button>
             <button id="helpTabSave" role="tab" aria-selected="false" aria-controls="help-save">Save</button>
         </div>
+        <div id="helpProgress" class="help-drawer__progress" aria-live="polite" aria-label="Section progress"></div>
         <div class="help-drawer__panel" role="tabpanel"></div>
         <div class="help-drawer__footer">
             <button id="helpCopyExample" class="help-drawer__copy">Copy example</button>
