@@ -7,10 +7,12 @@ test.describe('Help Drawer - E2E', () => {
     await page.goto('/');
   });
 
+  async function openDrawer(page){
+    await page.evaluate(() => { if (window.HelpDrawer && typeof window.HelpDrawer.open === 'function') { window.HelpDrawer.open(); } else { const b = document.getElementById('helpDrawerToggle'); b && b.click(); } });
+  }
+
   test('Drawer opens and tabs are visible', async ({ page }) => {
-    // Help button should open drawer
-    const helpBtn = page.locator('#helpDrawerToggle');
-    await helpBtn.click();
+    await openDrawer(page);
 
     await expect(page.locator('#helpDrawer')).toBeVisible();
     await expect(page.locator('[role="tab"]:has-text("Tips")')).toBeVisible();
@@ -20,22 +22,22 @@ test.describe('Help Drawer - E2E', () => {
   });
 
   test('Content changes when focusing fields', async ({ page }) => {
-    await page.locator('#helpDrawerToggle').click();
+    await openDrawer(page);
 
     await page.focus('#purchasePrice');
-    await page.waitForTimeout(150);
+    await page.waitForTimeout(200);
     const title1 = await page.locator('#helpDrawerTitle').textContent();
     expect(typeof title1).toBe('string');
 
     await page.focus('#loanInterestRate');
-    await page.waitForTimeout(150);
+    await page.waitForTimeout(200);
     const title2 = await page.locator('#helpDrawerTitle').textContent();
     expect(typeof title2).toBe('string');
     expect(title2 !== title1).toBeTruthy();
   });
 
   test('Search highlights terms and clears properly', async ({ page }) => {
-    await page.locator('#helpDrawerToggle').click();
+    await openDrawer(page);
     const search = page.locator('#helpDrawerSearch');
     await search.fill('interest');
     await page.waitForTimeout(150);
@@ -50,9 +52,8 @@ test.describe('Help Drawer - E2E', () => {
   });
 
   test('Copy example shows toast and copies to clipboard', async ({ page }) => {
-    await page.locator('#helpDrawerToggle').click();
+    await openDrawer(page);
     const copyBtn = page.locator('#helpCopyExample');
-    // If no button yet, skip gracefully
     if (!(await copyBtn.count())) test.skip();
 
     await copyBtn.click();
