@@ -5,6 +5,8 @@ import { test, expect } from '@playwright/test';
 test.describe('Help Drawer - E2E', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    await expect(page.locator('#purchasePrice')).toBeVisible();
+    await page.waitForFunction(() => typeof window.HelpDrawer !== 'undefined');
   });
 
   async function openDrawer(page){
