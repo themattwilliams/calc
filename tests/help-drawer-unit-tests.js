@@ -24,4 +24,9 @@ TestFramework.describe('Help Drawer - Unit', () => {
     const hasSetTab = typeof api.setActiveTab === 'function';
     TestFramework.expect(hasSetTab).toBe(true);
   });
+
+  TestFramework.test('Visited progress element exists', () => {
+    const el = document.getElementById('helpProgress');
+    TestFramework.expect(!!el).toBe(true);
+  });
 });

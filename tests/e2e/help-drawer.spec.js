@@ -79,4 +79,34 @@ test.describe('Help Drawer - E2E', () => {
     await copyBtn.click();
     await expect(page.locator('#helpToast')).toBeVisible();
   });
+
+  test('Hovering inputs updates help content and progress', async ({ page }) => {
+    await openDrawer(page);
+    const titleBefore = await page.locator('#helpDrawerTitle').textContent();
+    await page.hover('#loanInterestRate');
+    await page.waitForTimeout(250);
+    const titleAfter = await page.locator('#helpDrawerTitle').textContent();
+    expect((titleAfter || '') !== (titleBefore || '')).toBeTruthy();
+    // Progress should be announced
+    const prog = await page.locator('#helpProgress').textContent();
+    expect((prog || '')).toMatch(/Visited:/);
+  });
+
+  test('Tab switching shows only active panel', async ({ page }) => {
+    await openDrawer(page);
+    await page.click('#helpTabExamples');
+    await page.waitForTimeout(100);
+    const exHidden = await page.locator('#help-examples').getAttribute('aria-hidden');
+    const tipsHidden = await page.locator('#help-tips').getAttribute('aria-hidden');
+    expect(exHidden).toBe('false');
+    expect(tipsHidden).toBe('true');
+  });
+
+  test('Hover auto-opens drawer when hidden', async ({ page }) => {
+    // Close drawer via API
+    await page.evaluate(() => window.HelpDrawer && window.HelpDrawer.close && window.HelpDrawer.close());
+    await page.hover('#purchasePrice');
+    await page.waitForTimeout(250);
+    await expect(page.locator('#helpDrawer')).toBeVisible();
+  });
 });
