@@ -1,0 +1,38 @@
+{
+  "purchase": {
+    "title": "Purchase Price",
+    "tips": [
+      "Use your signed purchase agreement or closing disclosure.",
+      "Exclude rehab/repairs (enter those under Repairs)."
+    ],
+    "examples": [
+      { "label": "Single-family", "value": "$275,000" },
+      { "label": "4-plex", "value": "$1,100,000" }
+    ],
+    "mistakes": [
+      "Including closing costs in purchase price",
+      "Mixing down payment with price"
+    ],
+    "save": [
+      "Save before switching scenarios to avoid losing inputs."
+    ]
+  },
+  "loanInterestRate": {
+    "title": "Interest Rate",
+    "tips": [
+      "Enter the note rate (not APR).",
+      "Use your lender's quote or LE/CD."
+    ],
+    "examples": [
+      { "label": "Conventional", "value": "6.750%" },
+      { "label": "FHA", "value": "6.250%" }
+    ],
+    "mistakes": [
+      "Using APR instead of note rate",
+      "Forgetting to convert to %"
+    ],
+    "save": [
+      "Rates change—save scenarios as you compare."
+    ]
+  }
+}
