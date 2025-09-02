@@ -106,6 +106,7 @@ test.describe('Markdown Save & Load Workflow', () => {
       const downloadPath = path.join(downloadsPath, download.suggestedFilename());
       await download.saveAs(downloadPath);
       await waitForFile(downloadPath);
+      await waitForFile(downloadPath);
 
       // Verify file exists and has content
       expect(fs.existsSync(downloadPath)).toBe(true);
@@ -218,6 +219,7 @@ test.describe('Markdown Save & Load Workflow', () => {
       const downloadPath = path.join(downloadsPath, download.suggestedFilename());
       await download.saveAs(downloadPath);
       await waitForFile(downloadPath);
+      await waitForFile(downloadPath);
 
       const fileContent = fs.readFileSync(downloadPath, 'utf8');
       expect(fileContent).toContain('Beverly Hills');
@@ -306,6 +308,7 @@ test.describe('Markdown Save & Load Workflow', () => {
       const downloadPath = path.join(downloadsPath, download.suggestedFilename());
       await download.saveAs(downloadPath);
       await waitForFile(downloadPath);
+      await waitForFile(downloadPath);
 
       await page.reload();
       await page.waitForLoadState('networkidle');
@@ -373,6 +376,7 @@ test.describe('Markdown Save & Load Workflow', () => {
 
       const downloadPath = path.join(downloadsPath, download.suggestedFilename());
       await download.saveAs(downloadPath);
+      await waitForFile(downloadPath);
       await waitForFile(downloadPath);
 
       const fileContent = fs.readFileSync(downloadPath, 'utf8');
