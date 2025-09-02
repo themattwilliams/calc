@@ -2,6 +2,14 @@ const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 
+async function waitForFile(filePath, tries = 50, intervalMs = 100) {
+  for (let i = 0; i < tries; i++) {
+    if (fs.existsSync(filePath)) return true;
+    await new Promise(r => setTimeout(r, intervalMs));
+  }
+  return false;
+}
+
 test.describe('Load from Markdown Functionality', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:8080/index.html');
@@ -189,6 +197,7 @@ Generated on: ${new Date().toLocaleDateString()}
     
     const downloadPath = path.join(__dirname, 'bottom_test_file.md');
     await download.saveAs(downloadPath);
+    await waitForFile(downloadPath);
 
     // Clear form
     await page.fill('#propertyAddress', '');
@@ -243,6 +252,7 @@ Generated on: ${new Date().toLocaleDateString()}
       
       const downloadPath = path.join(__dirname, `cycle_${i}_test.md`);
       await download.saveAs(downloadPath);
+      await waitForFile(downloadPath);
 
       // Clear and reload
       await page.fill('#propertyAddress', '');
